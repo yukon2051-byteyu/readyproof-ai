@@ -43,7 +43,7 @@ REQUEST_TONE = {"下書き": "muted", "確定": "muted", "送付済み": "active
 CSS = f"""
 <style>
 /* 上の余白を詰める（Streamlit 標準は約6rem） */
-[data-testid="stMainBlockContainer"] {{ padding-top: 1.75rem; padding-bottom: 3rem; max-width: 1240px; }}
+[data-testid="stMainBlockContainer"] {{ padding-top: 1.4px; padding-bottom: 3rem; max-width: 1240px; }}
 [data-testid="stHeader"] {{ background: transparent; height: 2.5rem; }}
 
 /* 背景（薄い灰色）と枠の中（白）を分ける */
