@@ -110,9 +110,10 @@ def detail(p, r):
                 st.rerun()
     validity_note()
     section("満たす条件・残る条件")
-    c1, c2 = st.columns(2)
+    c1, c2, c3 = st.columns(3)
     c1.markdown("**満たす条件**\n" + ("\n".join(f"- {x}" for x in dg["met_conditions"]) or "- なし"))
-    c2.markdown("**残る条件（未確認・不適合）**\n" + ("\n".join(f"- {x}" for x in dg["remaining_conditions"]) or "- なし"))
+    c2.markdown("**残る条件（ベンダー確認が必要）**\n" + ("\n".join(f"- {x}" for x in dg["remaining_conditions"]) or "- なし"))
+    c3.markdown("**実機テストで確認すること**\n" + ("\n".join(f"- {x}" for x in dg.get("test_conditions", [])) or "- なし"))
     if dg.get("plan_conditions"):
         st.markdown(chip("プラン・オプション条件", "warn") + esc(dg["plan_conditions"]), unsafe_allow_html=True)
     if dg.get("constraints"):

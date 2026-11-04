@@ -340,3 +340,19 @@ def test_decision_requires_reason_and_conditions(project):
     rules.record_decision(project, "導入延期", "A", "2026-11-01", "必須要件が未確認", "", {"fp": "x"})
     rules.record_decision(project, "条件付き導入可", "A", "2026-11-02", "回答待ち", "書面回答", {"fp": "y"})
     assert project["decision"]["history"][0]["value"] == "導入延期"
+
+
+def test_test_conditions_keep_estimate_but_vendor_conditions_do_not(deck_project):
+    """BL-002：実機テストで確かめればよい点だけなら見込みを保つ。ベンダー確認が必要な条件が残れば情報不足に下げる。"""
+    p, src = deck_project
+    r = rules.add_requirement(p, {"business": "経費申請の承認", "rules": "10,000円以上は部長が承認する", "priority": "必須"})
+    rules.confirm_requirement(p, r, "確認者")
+    seg = next(g for g in src["segments"] if "承認ルート設定" in g["text"])
+    ev = [{"ref_type": "source", "source_id": src["id"], "version": src["version"], "seg_id": seg["seg_id"],
+           "quote": seg["text"][:20], "kind": "資料の記載"}]
+    base = {"req_id": r["id"], "product_id": "PR-001", "category": "標準設定で対応できる見込み", "reason": "設定で対応",
+            "met_conditions": ["金額別の承認ルート"], "evidence": ev}
+    d1 = rules.add_diagnosis(p, {**base, "test_conditions": ["10,000円ちょうどが部長承認になるか"]}, origin="AI生成")
+    assert d1["category"] == "標準設定で対応できる見込み" and d1["test_conditions"]
+    d2 = rules.add_diagnosis(p, {**base, "remaining_conditions": ["部長を自動で割り当てられるか"]}, origin="AI生成")
+    assert d2["category"] == "情報不足・ベンダー確認が必要"

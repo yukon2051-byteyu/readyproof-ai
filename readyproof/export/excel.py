@@ -149,14 +149,14 @@ def report_workbook(project: dict) -> bytes:
     for q in project["requirements"]:
         dg = current_diagnosis(project, q["id"])
         if not dg:
-            rows.append([q["id"], q["version"], "診断なし", "", "", "", "", "", "", "", ""])
+            rows.append([q["id"], q["version"], "診断なし", "", "", "", "", "", "", "", "", ""])
             continue
         rows.append([q["id"], dg["req_version"], dg["category"], dg["reason"], dg["met_conditions"],
-                     dg["remaining_conditions"], _evs(project, dg["evidence"]), dg["plan_conditions"],
+                     dg["remaining_conditions"], dg.get("test_conditions", []), _evs(project, dg["evidence"]), dg["plan_conditions"],
                      dg["next_check"], f"{dg['review_status']}（{dg['origin']}）", dg.get("reviewed_by", "")])
-    _table(ws, r, ["要件ID", "要件の版", "診断区分", "理由", "満たす条件", "残る条件", "根拠（資料名・位置・発言時刻・引用・確認状態）",
-                   "プラン等の条件", "次に確認すること", "レビュー状態", "確認者（自己申告）"],
-           rows, [9, 6, 18, 36, 26, 26, 60, 22, 26, 16, 12])
+    _table(ws, r, ["要件ID", "要件の版", "診断区分", "理由", "満たす条件", "残る条件（ベンダー確認が必要）", "実機テストで確認すること",
+                   "根拠（資料名・位置・発言時刻・引用・確認状態）", "プラン等の条件", "次に確認すること", "レビュー状態", "確認者（自己申告）"],
+           rows, [9, 6, 18, 36, 26, 26, 26, 60, 22, 26, 16, 12])
 
     # 質問と回答
     ws = wb.create_sheet("質問と回答")

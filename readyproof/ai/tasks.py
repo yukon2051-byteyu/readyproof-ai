@@ -183,6 +183,7 @@ def apply_diagnosis(project: dict, data: dict, refmap: dict, product_id: str | N
             "req_id": d["req_id"], "product_id": product_id, "category": d.get("category"),
             "reason": d.get("reason", ""), "met_conditions": d.get("met_conditions", []),
             "remaining_conditions": d.get("remaining_conditions", []),
+            "test_conditions": d.get("test_conditions", []),
             "evidence": _map_evidence(d.get("evidence"), refmap),
             "constraints": d.get("constraints", ""), "plan_conditions": d.get("plan_conditions", ""),
             "next_check": d.get("next_check", ""),
@@ -233,7 +234,7 @@ def build_request_input(project: dict, req_id: str, run_ids: list[str] | None = 
                                                                         "exceptions", "priority", "reason")},
                                               ensure_ascii=False))
               + "\n\n" + data_block("診断", json.dumps({k: dg.get(k) for k in ("category", "reason", "met_conditions",
-                                                                                "remaining_conditions", "plan_conditions")},
+                                                                                "remaining_conditions", "test_conditions", "plan_conditions")},
                                                       ensure_ascii=False) if dg else "なし")
               + "\n\n" + data_block("根拠", "\n".join(lines) or "なし")
               + "\n\n" + data_block("質問と回答", "\n".join(ans) or "なし")
@@ -275,7 +276,7 @@ def build_test_input(project: dict, req_id: str, request_id: str | None) -> str:
                                                                       "rules", "exceptions", "inputs", "outputs")},
                                             ensure_ascii=False))
             + "\n\n" + data_block("診断", json.dumps({k: dg.get(k) for k in ("category", "met_conditions",
-                                                                              "remaining_conditions", "plan_conditions")},
+                                                                              "remaining_conditions", "test_conditions", "plan_conditions")},
                                                     ensure_ascii=False) if dg else "なし")
             + "\n\n" + data_block("依頼書の受入条件", (cr or {}).get("acceptance_criteria", "") or "なし"))
 
@@ -311,12 +312,12 @@ def build_tests_input(project: dict, req_ids: list[str]) -> str:
                                   "workflow": req["workflow"], "role": req["role"], "rules": req["rules"],
                                   "exceptions": req["exceptions"], "inputs": req["inputs"], "outputs": req["outputs"],
                                   "priority": req["priority"],
-                                  "diagnosis": {k: dg.get(k) for k in ("category", "met_conditions", "remaining_conditions",
+                                  "diagnosis": {k: dg.get(k) for k in ("category", "met_conditions", "remaining_conditions", "test_conditions",
                                                                        "plan_conditions")} if dg else None,
                                   "acceptance_criteria": acc}, ensure_ascii=False))
     return ("次の自社の要件について、受入テスト仕様（そのまま実施できる完成度）を作成してください。"
             "要件ごとに、通常操作・例外・境界値（金額の境目・上限件数・期限など）・権限・承認/差し戻し・設定/改修箇所・"
-            "関連する既存動作の再確認から、要件に根拠のある観点をすべて選び、各テストに req_id・事前条件・具体的なテストデータ・"
+            "関連する既存動作の再確認から、要件に根拠のある観点をすべて選び（診断の test_conditions は必ずテストにする）、各テストに req_id・事前条件・具体的なテストデータ・"
             "番号付き手順・確認できる期待結果・合否判定基準・根拠を書いてください。画面名・ボタン名・設定方法が資料にない場合は、"
             "業務の操作として書き、存在しない画面を作らないでください。" + chr(10) * 2
             + f"対象製品：{prod.get('name', '未登録')}（版：{prod.get('edition') or '未記入'}／プラン：{prod.get('plan') or '未記入'}）"
