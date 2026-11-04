@@ -125,7 +125,10 @@ def items(p):
     if not srcs and not recs:
         st.info("まだ何も読み込んでいません。上の欄にファイルを入れてください。")
         return
+    keys = [("src", s["id"]) for s in srcs] + [("rec", r["id"]) for r in recs]
     opened = st.session_state.get("open_item")
+    if opened not in keys:  # 何も開いていなければ1件目を開く（「閉じる」は使わない）
+        opened = keys[0]
     for s in srcs:
         cov = s.get("coverage", {})
         n_warn = len(s.get("warnings", [])) + (1 if cov.get("skipped") else 0)
@@ -156,7 +159,8 @@ def _row(key, title, sub, badges, opened):
         c1, c2 = st.columns([5, 1.3], vertical_alignment="center")
         c1.markdown(f"{badges}<span class='rp-item'><span class='h'>{esc(title)}</span></span><br>"
                     f"<span class='rp-small'>{esc(sub)}</span>", unsafe_allow_html=True)
-        is_open = opened == key
-        if c2.button("閉じる" if is_open else "詳しく確認する", key=f"open_{key[0]}_{key[1]}", width="stretch"):
-            st.session_state.open_item = None if is_open else key
+        if opened == key:
+            c2.markdown("<div style='text-align:center' class='rp-small'>下に表示中</div>", unsafe_allow_html=True)
+        elif c2.button("詳しく確認する", key=f"open_{key[0]}_{key[1]}", width="stretch"):
+            st.session_state.open_item = key
             st.rerun()

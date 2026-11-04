@@ -114,3 +114,9 @@ def remaining_issues(project: dict, m: dict | None = None) -> list[dict]:
     for s in m["stale"]:
         out.append({"種類": "再確認が必要", "ID": s["id"], "内容": " / ".join(s["reasons"]), "次の操作": s["type"]})
     return out
+
+
+def decision_counts(m: dict, n_issues: int) -> dict:
+    """導入判断と一緒に記録する、判断時点の件数（集計の分母などは除く）。"""
+    skip = ("by_category", "diag_reviewed", "pass_rate", "executed_rate")
+    return {**{k: (len(v) if isinstance(v, list) else v) for k, v in m.items() if k not in skip}, "remaining": n_issues}

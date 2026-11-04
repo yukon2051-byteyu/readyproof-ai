@@ -35,6 +35,10 @@ def render():
         ai_tests_box(p)
 
     focus = st.session_state.get("sel_test")
+    if focus not in [t["id"] for t in ts] and ts:  # 何も開いていなければ1件目を開く（「閉じる」は使わない）
+        req_order = [r["id"] for r in p["requirements"] if r["status"] != "廃止"]
+        first = next((t for rid in req_order for t in ts if rid in t["req_ids"]), ts[0])
+        focus = first["id"]
     for req in [r for r in p["requirements"] if r["status"] != "廃止"]:
         rts = [t for t in ts if req["id"] in t["req_ids"]]
         section(f"{req['id']}　{req['business']}（テスト {len(rts)}件）")
@@ -98,8 +102,10 @@ def row(p, t, opened: bool):
                     f"<span class='rp-small'>{esc(t['viewpoint'])}／期待結果：{esc(t['expected'][:80])}</span>",
                     unsafe_allow_html=True)
         open_label = "詳しく見る" if state.is_demo() else "開く・結果を記録"
-        if c2.button("閉じる" if opened else open_label, key=f"ot_{t['id']}", width="stretch"):
-            st.session_state.sel_test = None if opened else t["id"]
+        if opened:
+            c2.markdown("<div style='text-align:center' class='rp-small'>下に表示中</div>", unsafe_allow_html=True)
+        elif c2.button(open_label, key=f"ot_{t['id']}", width="stretch"):
+            st.session_state.sel_test = t["id"]
             st.rerun()
         if opened:
             st.divider()

@@ -45,6 +45,8 @@ def render():
     else:
         ai_box(p, reqs)
     focus = st.session_state.get("focus_req")
+    if focus not in [r["id"] for r in reqs]:  # 何も開いていなければ1件目を開く（「閉じる」は使わない）
+        focus = reqs[0]["id"]
     section("要件ごとの診断")
     for r in reqs:
         card(p, r, focus == r["id"])
@@ -116,9 +118,10 @@ def card(p, r, focused: bool):
         nq = sum(1 for q in p["questions"] if r["id"] in q.get("req_ids", []))
         ncr = sum(1 for c in p["requests"] if r["id"] in c.get("req_ids", []))
         c1.caption(f"理由：{dg['reason']}" if dg else "まだ診断していません（上の「AIで診断する」で診断します）。")
-        if c2.button("閉じる" if focused else "詳しく確認する", key=f"fr_{r['id']}", width="stretch",
-                     type="secondary" if focused else "primary"):
-            st.session_state.focus_req = None if focused else r["id"]
+        if focused:
+            c2.markdown("<div style='text-align:center' class='rp-small'>下に表示中</div>", unsafe_allow_html=True)
+        elif c2.button("詳しく確認する", key=f"fr_{r['id']}", width="stretch", type="primary"):
+            st.session_state.focus_req = r["id"]
             st.rerun()
         c2.caption(f"根拠 {len(dg['evidence']) if dg else 0}件・質問 {nq}件・依頼 {ncr}件")
         if not focused:

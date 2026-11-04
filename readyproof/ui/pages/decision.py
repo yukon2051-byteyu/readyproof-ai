@@ -12,7 +12,7 @@ from ...logic import rules
 from ...logic.stale import decision_changed_since, decision_snapshot
 from .. import readonly, state
 from ..components import context_bar, page_title
-from ..theme import category_chip, chip, esc, section, tiles
+from ..theme import chip, esc, section, tiles
 
 JUMP = {"自社に合うかを確認": "diagnosis", "質問・対応依頼": "questions", "試すこと・実施結果": "tests", "診断": "diagnosis",
         "テスト": "tests", "実施結果": "tests"}
@@ -35,17 +35,11 @@ def decision_section(p, show_stats: bool = True):
 
     if not show_stats:
         return _issues_and_decision(p, m)
-    section("資料・説明上の見込み（実機での確認ではありません）")
-    st.markdown(" ".join(category_chip(c) + f"**{n}**　" for c, n in m["by_category"].items())
-                + category_chip(None) + f"**{m['no_diagnosis']}**")
-    tiles([
-        {"label": "必須要件のうち、見込みが立っていない", "value": f"{len(m['must_unresolved'])}件",
-         "note": f"必須 {m['must']}件中", "alert": bool(m["must_unresolved"])},
-        {"label": "診断を人が確認した割合", "value": m["diag_reviewed"]["text"], "note": "分母：診断済みの要件"},
-        {"label": "根拠に矛盾", "value": f"{m['contradictions']}件", "note": "書面での確認が必要",
-         "alert": bool(m["contradictions"])},
-        {"label": "情報不足・ベンダー確認", "value": f"{m['lack_info']}件", "note": "質問で解消する"},
-    ])
+    from . import step3
+
+    section("診断結果のまとめ（資料・営業説明からの見込み。実機での確認前）")
+    step3.summary(p, [r for r in p["requirements"] if r["status"] != "廃止"])
+    st.caption(f"AIの診断を人が確認した割合：{m['diag_reviewed']['text']}（分母：診断済みの要件）")
     section("実機テスト（人が実際に試した結果）", gold=True)
     tiles([
         {"label": "合格率", "value": m["pass_rate"]["text"], "gold": True, "note": "分母：合否を判定した最新結果"},
@@ -107,10 +101,8 @@ def _issues_and_decision(p, m):
         st.caption(f"判断時点の残件 {len(issues)} 件も一緒に記録します。認証がないため、名前は本人確認・正式な承認ではありません。")
         if st.form_submit_button("判断を記録", type="primary"):
             try:
-                rules.record_decision(p, val, by, str(dt), reason, cond, decision_snapshot(p, {**{
-                    k: (len(v) if isinstance(v, list) else v) for k, v in m.items() if k not in ("by_category", "diag_reviewed",
-                                                                                                    "pass_rate", "executed_rate")},
-                    "remaining": len(issues)}))
+                rules.record_decision(p, val, by, str(dt), reason, cond,
+                                      decision_snapshot(p, M.decision_counts(m, len(issues))))
                 st.rerun()
             except rules.RuleError as e:
                 st.error(str(e))

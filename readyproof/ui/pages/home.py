@@ -11,6 +11,7 @@ from __future__ import annotations
 import streamlit as st
 
 from ...config import APP_NAME_JA
+from ...ai.client import valid_access_codes
 from ...core import new_project
 from ...demos.builder import DEMOS, build
 from .. import state
@@ -83,9 +84,16 @@ def render():
 
     # ---- 自分の案件 ----
     section("自分の案件で試してみる", big=True)
-    c1, c2 = st.columns([3, 1], vertical_alignment="bottom")
+    st.markdown("<div class='rp-small'>AIパスワードが必要です（AIの実行には料金がかかるため）。</div>", unsafe_allow_html=True)
+    c1, c2, c3 = st.columns([2, 1.3, 1], vertical_alignment="bottom")
     name = c1.text_input("案件名", placeholder="例：勤怠管理サービスの導入", key="new_project_name")
-    if c2.button("作成する", icon=":material/add:", disabled=not name.strip(), width="stretch"):
+    code = c2.text_input("AIパスワード", type="password", key="home_ai_pw", value=st.session_state.get("access_code", ""))
+    pw_ok = bool(code.strip()) and code.strip() in valid_access_codes()
+    if pw_ok:
+        st.session_state.access_code = code  # AIを実行する画面でも使う
+    elif code.strip():
+        st.caption(":red[AIパスワードが正しくありません。]")
+    if c3.button("作成する", icon=":material/add:", disabled=not (name.strip() and pw_ok), width="stretch"):
         state.set_project(new_project(name.strip()))
         state.flash("新しい案件を作成しました。まず製品の情報と資料を入れてください。")
         state.goto("input1")

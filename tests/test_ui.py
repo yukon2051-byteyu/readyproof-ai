@@ -147,3 +147,16 @@ def test_demo_decision_widgets_disabled_but_own_project_enabled():
     p["project"]["demo_id"] = None  # 自分の案件
     at = page("tests", p, sel_test=t)
     assert [b for b in at.button if b.label == "記録する" and not b.disabled]
+
+
+def test_create_own_project_requires_ai_password(monkeypatch):
+    """自分の案件の作成は、AIパスワードが正しいときだけ押せる。"""
+    monkeypatch.setenv("RP_ACCESS_CODES", "secret-pw")
+    at = page("home", None)
+    at.text_input(key="new_project_name").input("勤怠管理の導入").run()
+    create = lambda: next(b for b in at.button if b.label == "作成する")
+    assert create().disabled
+    at.text_input(key="home_ai_pw").input("wrong").run()
+    assert create().disabled and "AIパスワードが正しくありません" in texts(at)
+    at.text_input(key="home_ai_pw").input("secret-pw").run()
+    assert not create().disabled

@@ -130,13 +130,17 @@ def test_screen_demos_use_saved_real_ai_outputs():
         p = build_screen(d["id"])
         confirmed = [r for r in p["requirements"] if r["status"] == "確定"]
         assert confirmed and all(current_diagnosis(p, r["id"]) for r in confirmed)
-        assert all(x["origin"] == ORIGIN for x in p["diagnoses"] + p["tests"])
-        assert p["tests"] and not p["runs"]  # テスト結果は見る人が記録する
-        assert any(t["status"] == "確定" for t in p["tests"])
-        assert all(t["status"] == "下書き" for t in p["tests"] if "要確認" in t["steps"] + t["expected"])
+        ai_diag = [x for x in p["diagnoses"] if x["origin"] == ORIGIN]
+        assert {x["req_id"] for x in ai_diag} == {r["id"] for r in confirmed}  # AIの診断は全件残る（見直し後は履歴）
+        assert p["tests"] and all(t["origin"] == ORIGIN for t in p["tests"])
         assert p["project"]["demo_ai"]["model"]
-        for dg in p["diagnoses"]:  # 参照キー（E3 など）が文中に残らない
+        for dg in ai_diag:  # 参照キー（E3 など）が文中に残らない
             assert not __import__("re").search(r"(?<![A-Za-z0-9])E[0-9]+(?![0-9])", dg["reason"])
+        # 完了した案件の見本：人の作業（架空）を経て、導入判断まで記録されている
+        assert p["runs"] and all(r["tester"].endswith("（架空）") for r in p["runs"])
+        assert all(t["status"] == "確定" for t in p["tests"])
+        assert p["decision"]["value"] != "未判断" and p["decision"]["by"].endswith("（架空）")
+        assert all(q["status"] != "下書き" for q in p["questions"])
 
 
 def test_saved_ai_output_rejects_changed_inputs():
@@ -150,3 +154,18 @@ def test_saved_ai_output_rejects_changed_inputs():
     p["requirements"][0]["rules"] += "（変更）"
     with pytest.raises(StaleDemoOutput):
         apply_saved(p, "demo1")
+
+
+def test_completed_demo_decisions_match_remaining_issues():
+    """判断の見本は、残った問題と矛盾しない（問題が残るなら「導入可」にしない）。"""
+    from readyproof.demos.builder import build as build_screen
+    from readyproof.logic import metrics as M
+
+    for d, want in (("demo1", "条件付き導入可"), ("demo2", "条件付き導入可"), ("demo3", "導入可")):
+        p = build_screen(d)
+        issues = M.remaining_issues(p)
+        assert p["decision"]["value"] == want
+        if want == "導入可":
+            assert not issues
+        else:
+            assert p["decision"]["conditions"]

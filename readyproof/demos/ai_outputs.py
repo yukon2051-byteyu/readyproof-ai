@@ -66,4 +66,8 @@ def apply_saved(p: dict, demo_id: str) -> None:
             rules.confirm_test(p, t, REVIEWER)
         except rules.RuleError:
             t["expected_confirmed"] = False
+    from .followup import apply as apply_followup
+
+    apply_followup(p, demo_id)  # AIの出力のあとの人の作業（すべて架空の記録）
     p["project"]["demo_ai"] = {"model": saved.get("model"), "generated_at": saved.get("generated_at")}
+
