@@ -43,11 +43,6 @@ ROLES = [
     ("AI", "AI", "照合・診断・テスト仕様書", "資料と自社のルールの照合・診断、ベンダーへの質問、依頼書とテスト仕様書"),
     ("人", "人", "判断・テスト", "AIの診断の確認、導入判断、実機でのテスト"),
 ]
-DEMO_POINTS = {
-    "demo1": ["スライドの表から根拠を引用", "記載なし → 質問 → 回答で更新", "境界値テストの不合格 → 設定変更 → 再テスト"],
-    "demo2": ["「ロット管理 ○」だけで判断しない", "対応方法を比べて改修依頼書", "一部合格を全体の合格にしない"],
-    "demo3": ["録画の発言を時刻・話者付きで根拠に", "資料と営業説明の矛盾を表示", "口頭説明を書面で確認する質問"],
-}
 
 
 @st.cache_data(show_spinner=False)
@@ -85,18 +80,16 @@ def render():
            f'<div class="m" style="margin-top:0;padding-top:0">{esc(io)}</div><div class="b">{esc(d)}</div></div>'
            for i, (io, t, d) in enumerate(FLOW)])
 
-    # ---- 3分デモ（3件から選ぶ） ----
-    section("3分デモ：見たいデモを選んでください（架空のデータ・料金なし）")
-    _grid([f'<div class="rp-card"><div class="t">{esc(d["title"])}</div><div class="b">{esc(d["theme"])}</div>'
-           f'<ul>{"".join(f"<li>{esc(x)}</li>" for x in DEMO_POINTS[d["id"]])}</ul>'
-           f'<div class="m">業務：{esc(d["business"])}</div></div>' for d in DEMOS])
-    for col, d in zip(st.columns(len(DEMOS)), DEMOS):
-        if col.button("このデモを始める", key=f"open_{d['id']}", type="primary", icon=":material/play_arrow:",
-                      width="stretch"):
-            _open_demo(d["id"])
-    st.download_button("見本：受入テスト仕様書（Excel）をダウンロード", sample_report(),
-                       file_name="ReadyProof_サンプル_受入テスト仕様書.xlsx", mime=XLSX, icon=":material/download:",
-                       type="tertiary")
+    # ---- 3分デモ：その場で選んで始める ----
+    titles = {d["id"]: d["title"] for d in DEMOS}
+    c1, c2, c3 = st.columns([1.5, 1.3, 1], vertical_alignment="bottom")
+    pick = c1.selectbox("見たいデモを選ぶ", list(titles.keys()), format_func=lambda i: titles[i], key="demo_pick")
+    if c2.button("3分デモを始める", type="primary", icon=":material/play_arrow:", width="stretch", key="open_main"):
+        _open_demo(pick)
+    c3.download_button("見本：受入テスト仕様書", sample_report(), file_name="ReadyProof_サンプル_受入テスト仕様書.xlsx",
+                       mime=XLSX, icon=":material/download:", width="stretch")
+    st.caption("架空の会社・資料で、約3分。料金はかかりません。　" + "　".join(
+        f"・{d['title']}：{d['theme']}" for d in DEMOS if d["id"] == pick))
 
     # ---- 自分の案件 ----
     section("自分の案件で使う")

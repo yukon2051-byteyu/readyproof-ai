@@ -39,12 +39,14 @@ def test_home_shows_tagline_and_demos():
     t = texts(at)
     assert TAGLINE.replace("「", "").split("」")[0][:8] in t.replace("「", "")
     assert "ReadyProof" in t and "AI受入テスト・導入確認支援システム" in t
-    assert [b.label for b in at.button].count("このデモを始める") == 3
+    assert "3分デモを始める" in [b.label for b in at.button]
+    assert len(at.selectbox(key="demo_pick").options) == 3
 
 
 def test_open_demo_from_home():
     at = AppTest.from_file(APP, default_timeout=120).run()
-    at.button(key="open_demo2").click().run()
+    at.selectbox(key="demo_pick").set_value("demo2")
+    at.button(key="open_main").click().run()
     assert not at.exception
     assert at.session_state["project"]["project"]["demo_id"] == "demo2"
 
