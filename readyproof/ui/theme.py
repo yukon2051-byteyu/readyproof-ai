@@ -61,6 +61,7 @@ div[class*="st-key-rpbox_"] {{ padding: 14px 18px; }}
 .rp-desc {{ font-size: .9rem; color: {MUTED}; margin: .15rem 0 1rem; }}
 .rp-h {{ font-size: 1.05rem; font-weight: 700; color: {NAVY}; margin: 1.3rem 0 .5rem; padding-left: 10px;
   border-left: 4px solid {ACCENT}; line-height: 1.3; }}
+.rp-h.big {{ font-size: 1.4rem; font-weight: 800; }}
 .rp-small {{ font-size: .84rem; color: {MUTED}; }}
 .rp-quote {{ border-left: 3px solid #C9D3E0; background: #F7F9FC; padding: 4px 10px; margin: 4px 0 8px;
   white-space: pre-wrap; word-break: break-word; }}
@@ -228,10 +229,10 @@ def quote(text: str) -> None:
     st.markdown(f'<div class="rp-quote">{esc(text)}</div>', unsafe_allow_html=True)
 
 
-def section(title: str, top: str | None = None, gold: bool = False) -> None:
-    """小見出し。top で上の余白を個別に調整（例："-7px"）。gold=True で縦線を金色にする。"""
+def section(title: str, top: str | None = None, gold: bool = False, big: bool = False) -> None:
+    """小見出し。top で上の余白を個別に調整（例："-7px"）。gold=True で縦線を金色、big=True で文字を大きく。"""
     style = f' style="margin-top:{top}"' if top else ""
-    cls = "rp-h gold" if gold else "rp-h"
+    cls = "rp-h" + (" gold" if gold else "") + (" big" if big else "")
     st.markdown(f'<div class="{cls}"{style}>{esc(title)}</div>', unsafe_allow_html=True)
 
 

@@ -4,7 +4,7 @@
 2. 4段階（入力2つ → 出力2つ）と、3分デモの開始ボタン
 3. できること・役割分担
 4. 3件のデモの選択
-5. 自分の案件で使う
+5. 自分の案件で試してみる
 """
 from __future__ import annotations
 
@@ -82,7 +82,7 @@ def render():
     st.markdown(f'<div class="rp-small">{esc(d["title"])}：{esc(d["theme"])}</div>', unsafe_allow_html=True)
 
     # ---- 自分の案件 ----
-    section("自分の案件で使う")
+    section("自分の案件で試してみる", big=True)
     c1, c2 = st.columns([3, 1], vertical_alignment="bottom")
     name = c1.text_input("案件名", placeholder="例：勤怠管理サービスの導入", key="new_project_name")
     if c2.button("作成する", icon=":material/add:", disabled=not name.strip(), width="stretch"):
