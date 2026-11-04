@@ -101,14 +101,18 @@ def register(p):
 
 
 # ------------------------------------------------------------------
-def review(p):
+def review(p, src_fixed: dict | None = None):
     if not p["sources"]:
         st.info("資料がまだありません。「資料を登録」から読み込んでください。")
         return
     opts = {f"{x['id']} 第{x['version']}版：{x['name']}（{x['owner']}・{x['status']}）": i for i, x in enumerate(p["sources"])}
     c1, c2 = st.columns([3, 2])
-    key = c1.selectbox("確認する資料", list(opts.keys()), key="sel_src")
-    src = p["sources"][opts[key]]
+    if src_fixed is not None:
+        src = src_fixed
+        c1.markdown(f"**{esc(src['name'])}**（{esc(src['id'])} 第{src['version']}版）")
+    else:
+        key = c1.selectbox("確認する資料", list(opts.keys()), key="sel_src")
+        src = p["sources"][opts[key]]
     cov = src.get("coverage", {})
     groups = [g for g in dict.fromkeys(seg.get("group") or "（全体）" for seg in src["segments"])]
     slide_info = {f"スライド{x['slide']}": x for x in cov.get("slides", [])}

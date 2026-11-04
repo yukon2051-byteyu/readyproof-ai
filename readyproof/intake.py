@@ -48,7 +48,6 @@ TEMPLATES = {
             {"id": "operator", "type": "text", "q": "アカウントを止める操作をしてよいのは誰ですか？", "default": "情報システム部の管理者"},
             {"id": "log_years", "type": "number", "q": "管理者の操作履歴は、何年保存する必要がありますか？",
              "allow_unknown": True},
-            {"id": "plan", "type": "text", "q": "予算などで、使えるプランに制限はありますか？（なければ空欄）"},
         ],
     },
     "lot": {
@@ -81,6 +80,13 @@ TEMPLATES = {
         ],
     },
 }
+
+
+# 5つ目のテーマ：使うときの条件（全種類で最後に聞く）
+COMMON_LAST = {"id": "conditions", "type": "text",
+               "q": "使うときの条件に決まりはありますか？（予算・プラン・既存システムとの連携・端末・通信環境など。なければ空欄）"}
+for _t in TEMPLATES.values():
+    _t["questions"].append(dict(COMMON_LAST))
 
 
 def suggest_template(*texts: str) -> str:
@@ -196,8 +202,6 @@ def build_requirements(tid: str, answers: dict) -> list[dict]:
         add(business="操作履歴", workflow="管理者の操作履歴を保持する", role="監査担当",
             rules=f"管理者の操作履歴を{y:g}年以上保持すること。" if not _is_unknown(y) else "管理者の操作履歴を保持すること（期間は未定）。",
             open_issues="" if not _is_unknown(y) else "保存期間が未定")
-        if (a.get("plan") or "").strip():
-            add(business="契約プラン", workflow="利用できるプランの制約", role="情報システム部", rules=a["plan"].strip())
 
     elif tid == "lot":
         d = a.get("direction")
@@ -234,4 +238,6 @@ def build_requirements(tid: str, answers: dict) -> list[dict]:
             add(workflow=a.get("what") or "", role=a.get("who") or "", rules=a.get("rule") or "",
                 exceptions=a.get("exception") or "", priority=a.get("priority") or "必須",
                 open_issues="" if a.get("rule") else "守るべきルールが未記入")
+    if (a.get("conditions") or "").strip():
+        add(business="利用条件", workflow="製品を使うときの前提条件", role="導入担当", rules=a["conditions"].strip())
     return reqs

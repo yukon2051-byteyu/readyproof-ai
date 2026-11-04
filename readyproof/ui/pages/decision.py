@@ -25,10 +25,16 @@ def render():
     context_bar("decision")
     page_title("6 残った問題と導入判断",
                "集計はプログラムで計算します。「資料・説明上の見込み」「人の確認」「実機テスト」「依頼の完了」は別々に数えます。")
+    decision_section(p)
+
+
+def decision_section(p, show_stats: bool = True):
     m = M.compute(p)
     if decision_changed_since(p):
         st.warning("導入判断の後に、診断・テスト・依頼などの関連情報が更新されています。判断を見直してください。")
 
+    if not show_stats:
+        return _issues_and_decision(p, m)
     section("資料・説明上の見込み（実機での確認ではありません）")
     st.markdown(" ".join(category_chip(c) + f"**{n}**　" for c, n in m["by_category"].items())
                 + category_chip(None) + f"**{m['no_diagnosis']}**")
@@ -59,6 +65,10 @@ def render():
          "alert": bool(m["stale"])},
     ])
 
+    _issues_and_decision(p, m)
+
+
+def _issues_and_decision(p, m):
     issues = M.remaining_issues(p, m)
     section(f"残った問題（{len(issues)}件・すべて表示）")
     if issues:

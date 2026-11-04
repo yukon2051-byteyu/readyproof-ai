@@ -287,3 +287,38 @@ def _save(wb) -> bytes:
     buf = io.BytesIO()
     wb.save(buf)
     return buf.getvalue()
+
+
+def acceptance_test_workbook(project: dict) -> bytes:
+    """受入テスト書：要件ごとのテスト項目と、実施結果の記入欄。アプリがなくても実施記録に使える形。"""
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "受入テスト書"
+    tests = [t for t in project["tests"] if t["status"] != "廃止"]
+    draft = sum(1 for t in tests if t["status"] != "確定")
+    r = _header_block(ws, "受入テスト書", project,
+                      f"確定 {len(tests) - draft}件・下書き {draft}件（下書きは期待結果・手順が未確定です）")
+    rows = []
+    for t in sorted(tests, key=lambda x: (x["req_ids"][:1], x["id"])):
+        reqs = [find(project, "requirements", rid) for rid in t["req_ids"]]
+        lr = latest_run(project, t["id"])
+        rows.append([
+            t["id"], t["version"], "確定" if t["status"] == "確定" else "下書き（未確定）",
+            "\n".join(f"{x['id']} {x['business']}：{x['rules']}" for x in reqs if x), t["viewpoint"], t["purpose"],
+            t["preconditions"], t["inputs"], t["steps"], t["expected"], t["expected_basis"], t["importance"],
+            (lr or {}).get("executed_at", ""), (lr or {}).get("tester", ""),
+            ((lr["result"] if lr["status"] == "完了" else lr["status"]) if lr else ""), (lr or {}).get("actual", ""), "",
+        ])
+    _table(ws, r, ["テストID", "版", "状態", "要件", "観点", "目的", "事前条件", "入力", "手順", "期待結果", "期待結果の根拠",
+                   "重要度", "実施日", "実施者", "結果（合格／不合格／実施不能）", "実際の結果", "備考"],
+           rows, [8, 5, 12, 36, 10, 22, 22, 16, 34, 34, 18, 6, 12, 10, 14, 30, 16])
+    for row in range(r + 1, r + 1 + len(rows)):
+        for col in (13, 14, 15, 16, 17):
+            ws.cell(row=row, column=col).fill = INPUT_FILL
+    ws2 = wb.create_sheet("説明")
+    notes = [["この書類について", "ReadyProof AI で作成した受入テスト書です。実際の製品で人が試し、黄色の欄に結果を記入します。"],
+             ["合否の付け方", "期待結果どおりなら合格、違えば不合格（実際の結果を記入）。試せなかった場合は実施不能（合否に数えない）。"],
+             ["下書きの扱い", "状態が「下書き」のテストは、手順・期待結果を確定してから実施してください。"],
+             ["根拠", "期待結果の根拠は、自社の要件（版つき）と診断結果です。資料・営業説明上の見込みは、合格の代わりになりません。"]]
+    _table(ws2, 1, ["項目", "内容"], notes, [18, 100])
+    return _save(wb)

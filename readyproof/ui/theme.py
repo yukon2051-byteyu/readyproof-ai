@@ -51,7 +51,7 @@ CSS = f"""
 [data-testid="stSidebar"] {{ background: #FFFFFF; border-right: 1px solid {BORDER}; }}
 div[class*="st-key-rpbox_"], [data-testid="stForm"], [data-testid="stExpander"] details {{
   background: #FFFFFF; border-color: {BORDER} !important; box-shadow: 0 1px 2px rgba(20, 38, 63, .06); }}
-div[class*="st-key-rpbox_"] {{ padding: 2px 4px; }}
+div[class*="st-key-rpbox_"] {{ padding: 14px 18px; }}
 
 /* 画面の見出し（3段階：画面名 1.55rem／小見出し 1.05rem／本文） */
 .rp-ctx {{ font-size: .82rem; color: {MUTED}; margin: 0 0 .1rem; }}
@@ -88,7 +88,7 @@ div[class*="st-key-rpbox_"] {{ padding: 2px 4px; }}
 /* トップページの見出し帯（紺のグラデーション＋右側に「根拠を確かめる書類」のモチーフ） */
 .rp-hero {{ position: relative; overflow: hidden; border-radius: 14px; padding: 28px 32px 26px; margin: 0 0 18px;
   background: linear-gradient(120deg, {NAVY} 0%, #1B3A63 55%, #1F4E8C 100%); }}
-.rp-hero .motif {{ position: absolute; right: 26px; top: 50%; transform: translateY(-50%); width: 190px; height: 190px;
+.rp-hero .motif {{ position: absolute; right: 22px; top: 14px; width: 150px; height: 150px;
   opacity: .9; pointer-events: none; }}
 .rp-hero .inner {{ position: relative; max-width: 78%; }}
 .rp-hero .eyebrow {{ display: inline-block; font-size: .82rem; color: {NAVY}; background: {ACCENT}; font-weight: 700;
@@ -97,7 +97,9 @@ div[class*="st-key-rpbox_"] {{ padding: 2px 4px; }}
 .rp-hero .name span {{ color: {ACCENT}; }}
 .rp-hero .tag {{ font-size: 1.3rem; font-weight: 700; color: #fff; line-height: 1.5; }}
 .rp-hero .tag em {{ font-style: normal; color: {ACCENT}; }}
-.rp-hero .desc {{ font-size: .95rem; color: #DCE4EE; margin-top: 6px; }}
+.rp-hero .desc {{ font-size: .95rem; color: #E0B84A; font-weight: 500; margin-top: 10px; }}
+@media (min-width: 1100px) {{ .rp-hero .desc {{ white-space: nowrap; }} .rp-hero .inner {{ max-width: 100%; }}
+  .rp-hero .tag, .rp-hero .name, .rp-hero .eyebrow {{ max-width: 76%; }} }}
 
 /* トップ：3分デモの流れと成果物の見本（左右の高さをそろえ、下のボタンの位置を合わせる） */
 .rp-flow {{ display: flex; flex-direction: column; gap: 8px; height: 340px; margin-bottom: 12px; }}
@@ -123,11 +125,31 @@ div[class*="st-key-rpbox_"] {{ padding: 2px 4px; }}
 .rp-ctxrow.hit {{ background: #F3FAFF; border-left: 4px solid {ACCENT}; color: #1F2937; }}
 mark.rp-mark {{ background: #BFE9FC; color: inherit; padding: 0 2px; border-radius: 3px; }}
 
+/* 4段階の進み具合（①製品の資料 → ②自社のルール → ③診断結果 → ④受入テスト書） */
+.rp-stepper {{ display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 4px 0 14px; }}
+.rp-step {{ display: flex; gap: 10px; align-items: center; background: #fff; border: 1px solid {BORDER}; border-radius: 10px;
+  padding: 9px 12px; box-shadow: 0 1px 2px rgba(20, 38, 63, .06); }}
+.rp-step .no {{ flex: none; width: 30px; height: 30px; border-radius: 50%; display: inline-flex; align-items: center;
+  justify-content: center; font-weight: 800; background: #E5EAF0; color: {MUTED}; }}
+.rp-step .io {{ font-size: .72rem; color: {MUTED}; letter-spacing: .04em; }}
+.rp-step .nm {{ font-size: .98rem; font-weight: 700; color: {NAVY}; line-height: 1.3; }}
+.rp-step .sb {{ font-size: .76rem; color: {MUTED}; }}
+.rp-step.done {{ border-bottom: 3px solid {ACCENT}; }}
+.rp-step.done .no {{ background: {ACCENT}; color: {NAVY}; }}
+.rp-step.cur {{ background: {NAVY}; border-color: {NAVY}; }}
+.rp-step.cur .no {{ background: {ACCENT}; color: {NAVY}; }}
+.rp-step.cur .io, .rp-step.cur .sb {{ color: #B9C7DA; }}
+.rp-step.cur .nm {{ color: #fff; }}
+
+/* 一覧の1行カード（左：内容、右：ボタン） */
+.rp-item .h {{ font-weight: 700; color: {NAVY}; }}
+.rp-item .s {{ font-size: .84rem; color: {MUTED}; }}
+
 /* ガイド付きデモの帯 */
 .st-key-tour {{ background: #FFFFFF; border: 1px solid {BORDER}; border-left: 5px solid {ACCENT}; border-radius: 10px;
   padding: 10px 14px 8px; margin-bottom: 6px; box-shadow: 0 1px 3px rgba(20, 38, 63, .08); }}
 
-@media (max-width: 800px) {{ .rp-flow, .rp-result {{ height: auto; }} .rp-ctxrow {{ grid-template-columns: 1fr; }} .rp-grid {{ grid-template-columns: 1fr; }} .rp-hero .name {{ font-size: 2rem; }}
+@media (max-width: 800px) {{ .rp-stepper {{ grid-template-columns: 1fr 1fr; }} .rp-flow, .rp-result {{ height: auto; }} .rp-ctxrow {{ grid-template-columns: 1fr; }} .rp-grid {{ grid-template-columns: 1fr; }} .rp-hero .name {{ font-size: 2rem; }}
   .rp-hero .motif {{ display: none; }} .rp-hero .inner {{ max-width: 100%; }} }}
 </style>
 """
@@ -195,10 +217,12 @@ def section(title: str) -> None:
 
 
 def tiles(items: list[dict], cols: int | None = None) -> None:
-    """数値の枠を横に並べる（高さをそろえる）。items: {label, value, note?, alert?}"""
+    """数値の枠を横に並べる（高さをそろえる）。items: {label, value, note?, alert?, color?（上の線の色）}"""
     n = cols or len(items)
-    html_ = "".join(
-        f'<div class="rp-tile{" alert" if it.get("alert") else ""}"><div class="lb">{esc(it["label"])}</div>'
-        f'<div class="v">{esc(it["value"])}</div><div class="n">{esc(it.get("note", "")) or "&nbsp;"}</div></div>'
-        for it in items)
-    st.markdown(f'<div class="rp-grid" style="--cols:{n}">{html_}</div>', unsafe_allow_html=True)
+    parts = []
+    for it in items:
+        cls = "rp-tile alert" if it.get("alert") else "rp-tile"
+        style = f' style="border-top:4px solid {it["color"]}"' if it.get("color") else ""
+        parts.append(f'<div class="{cls}"{style}><div class="lb">{esc(it["label"])}</div>'
+                     f'<div class="v">{esc(it["value"])}</div><div class="n">{esc(it.get("note", "")) or "&nbsp;"}</div></div>')
+    st.markdown(f'<div class="rp-grid" style="--cols:{n}">{"".join(parts)}</div>', unsafe_allow_html=True)

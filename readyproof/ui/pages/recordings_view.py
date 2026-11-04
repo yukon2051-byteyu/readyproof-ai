@@ -46,6 +46,94 @@ def _meta_inputs(prefix: str) -> dict:
     return {"meeting_name": meeting, "held_on": held, "plan": plan, "participants": participants, "consent": consent}
 
 
+def media_panel(p, data: bytes, fname: str, key: str = "rec"):
+    """録画1件：長さ・音声の確認 → 情報入力 → 範囲と処理方法の確認 → 文字起こし。"""
+    s = state.settings()
+    lim = s.limits
+    ok, why = local_whisper_available()
+    eng = ENGINES["local_whisper"]
+    try:
+        info = probe_media(data, fname, lim)
+    except MediaError as e:
+        st.error(str(e))
+        info = None
+    if info:
+        dur = info["duration_sec"] or 0
+        st.markdown(
+            f"{chip('音声トラックあり', 'ok')}<span class='rp-small'>{esc(fname)}／長さ {fmt_ts(dur)}／"
+            f"{info['size_mb']}MB／形式 {esc(info['container'])}／音声 {esc(info['audio_streams'][0]['codec'])} "
+            f"{info['audio_streams'][0]['sample_rate']}Hz</span>", unsafe_allow_html=True)
+        for issue in info["issues"]:
+            st.warning(issue)
+        meta = _meta_inputs(key)
+        max_min = min(dur / 60, lim.max_transcribe_minutes_per_run) if dur else lim.max_transcribe_minutes_per_run
+        c1, c2 = st.columns(2)
+        start_m = c1.number_input("処理する開始（分）", 0.0, max(dur / 60, 0.0), 0.0, 0.5, key=f"{key}_start")
+        end_m = c2.number_input("処理する終了（分）", 0.0, max(dur / 60, 0.1), round(min(dur / 60, start_m + max_min), 2),
+                                0.5, key=f"{key}_end")
+        minutes = max(end_m - start_m, 0)
+        st.markdown(
+            f"- 処理方法：{eng['label']}\n- 送信先：{eng['destination']}\n- 話者の区別：{eng['diarization']}\n"
+            f"- 対象時間：{fmt_ts(start_m * 60)}〜{fmt_ts(end_m * 60)}（{minutes:.1f}分）。範囲外は分析対象外として記録します\n"
+            f"- 費用見込み：{eng['cost']}\n- 処理時間の目安：{MEASURED}")
+        h = media_hash(data)
+        reuse = find_reusable_transcript(p, h, round(start_m * 60, 1), round(end_m * 60, 1))
+        blockers = []
+        if not ok:
+            blockers.append(why)
+        if minutes <= 0:
+            blockers.append("処理する時間範囲を指定してください。")
+        if minutes > lim.max_transcribe_minutes_per_run:
+            blockers.append(f"1回の文字起こしは{lim.max_transcribe_minutes_per_run}分までです。範囲を分けて実行してください。")
+        used = st.session_state.get("session_transcribe_min", 0.0)
+        if used + minutes > s.budget.transcribe_minutes_per_code_per_month:
+            blockers.append("このセッションの文字起こし枠を超えます。")
+        if not meta["consent"]:
+            blockers.append("録画・発言の利用許可を確認してください。")
+        if reuse:
+            st.success(f"同じ録画・同じ範囲の文字起こし（{reuse['id']}）があります。再処理せずに再利用します。")
+            if st.button("既存の文字起こしを開く"):
+                st.session_state.media = st.session_state.get("media", {})
+                st.session_state.media[reuse["id"]] = data
+                st.session_state.sel_rec = reuse["id"]
+                st.session_state._goto_view = "発言の確認"; st.session_state.open_item = ("rec", st.session_state.sel_rec)
+                st.rerun()
+        for b in blockers:
+            st.caption(f"実行できません：{b}")
+        busy = st.session_state.get("tr_busy", False)
+        if not reuse and st.button("文字起こしを実行", type="primary", disabled=bool(blockers) or busy,
+                                   icon=":material/graphic_eq:"):
+            st.session_state.tr_busy = True
+            try:
+                bar = st.progress(0.0, text="音声を取り出しています…")
+                wav = extract_audio_wav(data, fname, start_m * 60, end_m * 60)
+                bar.progress(0.1, text="文字起こし中（このサーバー内で処理）…")
+                segs = transcribe_local(wav, s.whisper_model, offset_sec=start_m * 60,
+                                        progress=lambda x: bar.progress(0.1 + 0.9 * x, text="文字起こし中…"))
+                lg = state.ledger()
+                if lg:  # 永続記録がある環境では文字起こし時間も記録（API料金 0 円）
+                    rid = lg.reserve(s.budget, "transcribe", st.session_state.get("access_code", ""), 0.0,
+                                     "transcribe", minutes)
+                    lg.finalize(rid, "成功", 0.0, minutes=minutes)
+                st.session_state.session_transcribe_min = used + minutes
+                rec = _new_recording(p, {**meta, "file_name": fname}, build_utterances(segs),
+                                     f"{eng['label']}（モデル {s.whisper_model}）",
+                                     {"start": round(start_m * 60, 1), "end": round(end_m * 60, 1)}, info, h)
+                st.session_state.setdefault("media", {})[rec["id"]] = data
+                state.flash(f"{rec['id']} の文字起こしが完了しました（{len(rec['utterances'])}区間）。話者と内容を確認してください。")
+                st.session_state.sel_rec = rec["id"]
+                st.session_state._goto_view = "発言の確認"; st.session_state.open_item = ("rec", st.session_state.sel_rec)
+            except (MediaError, ValueError) as e:
+                st.error(str(e))
+            except Exception as e:  # モデル取得失敗・メモリ不足など
+                st.error(f"文字起こしに失敗しました（{type(e).__name__}）。代替として会議ツールの文字起こしを読み込めます。")
+            finally:
+                st.session_state.tr_busy = False
+                st.session_state.pop("rec_demo_bytes", None)
+            if st.session_state.get("_goto_view") == "発言の確認":
+                st.rerun()
+
+
 def register(p):
     s = state.settings()
     lim = s.limits
@@ -69,86 +157,7 @@ def register(p):
         if data is None:
             st.info("録画を選ぶと、長さ・容量・音声の有無を確認します。")
         else:
-            try:
-                info = probe_media(data, fname, lim)
-            except MediaError as e:
-                st.error(str(e))
-                info = None
-            if info:
-                dur = info["duration_sec"] or 0
-                st.markdown(
-                    f"{chip('音声トラックあり', 'ok')}<span class='rp-small'>{esc(fname)}／長さ {fmt_ts(dur)}／"
-                    f"{info['size_mb']}MB／形式 {esc(info['container'])}／音声 {esc(info['audio_streams'][0]['codec'])} "
-                    f"{info['audio_streams'][0]['sample_rate']}Hz</span>", unsafe_allow_html=True)
-                for issue in info["issues"]:
-                    st.warning(issue)
-                meta = _meta_inputs("rec")
-                max_min = min(dur / 60, lim.max_transcribe_minutes_per_run) if dur else lim.max_transcribe_minutes_per_run
-                c1, c2 = st.columns(2)
-                start_m = c1.number_input("処理する開始（分）", 0.0, max(dur / 60, 0.0), 0.0, 0.5, key="rec_start")
-                end_m = c2.number_input("処理する終了（分）", 0.0, max(dur / 60, 0.1), round(min(dur / 60, start_m + max_min), 2),
-                                        0.5, key="rec_end")
-                minutes = max(end_m - start_m, 0)
-                st.markdown(
-                    f"- 処理方法：{eng['label']}\n- 送信先：{eng['destination']}\n- 話者の区別：{eng['diarization']}\n"
-                    f"- 対象時間：{fmt_ts(start_m * 60)}〜{fmt_ts(end_m * 60)}（{minutes:.1f}分）。範囲外は分析対象外として記録します\n"
-                    f"- 費用見込み：{eng['cost']}\n- 処理時間の目安：{MEASURED}")
-                h = media_hash(data)
-                reuse = find_reusable_transcript(p, h, round(start_m * 60, 1), round(end_m * 60, 1))
-                blockers = []
-                if not ok:
-                    blockers.append(why)
-                if minutes <= 0:
-                    blockers.append("処理する時間範囲を指定してください。")
-                if minutes > lim.max_transcribe_minutes_per_run:
-                    blockers.append(f"1回の文字起こしは{lim.max_transcribe_minutes_per_run}分までです。範囲を分けて実行してください。")
-                used = st.session_state.get("session_transcribe_min", 0.0)
-                if used + minutes > s.budget.transcribe_minutes_per_code_per_month:
-                    blockers.append("このセッションの文字起こし枠を超えます。")
-                if not meta["consent"]:
-                    blockers.append("録画・発言の利用許可を確認してください。")
-                if reuse:
-                    st.success(f"同じ録画・同じ範囲の文字起こし（{reuse['id']}）があります。再処理せずに再利用します。")
-                    if st.button("既存の文字起こしを開く"):
-                        st.session_state.media = st.session_state.get("media", {})
-                        st.session_state.media[reuse["id"]] = data
-                        st.session_state.sel_rec = reuse["id"]
-                        st.session_state._goto_view = "発言の確認"
-                        st.rerun()
-                for b in blockers:
-                    st.caption(f"実行できません：{b}")
-                busy = st.session_state.get("tr_busy", False)
-                if not reuse and st.button("文字起こしを実行", type="primary", disabled=bool(blockers) or busy,
-                                           icon=":material/graphic_eq:"):
-                    st.session_state.tr_busy = True
-                    try:
-                        bar = st.progress(0.0, text="音声を取り出しています…")
-                        wav = extract_audio_wav(data, fname, start_m * 60, end_m * 60)
-                        bar.progress(0.1, text="文字起こし中（このサーバー内で処理）…")
-                        segs = transcribe_local(wav, s.whisper_model, offset_sec=start_m * 60,
-                                                progress=lambda x: bar.progress(0.1 + 0.9 * x, text="文字起こし中…"))
-                        lg = state.ledger()
-                        if lg:  # 永続記録がある環境では文字起こし時間も記録（API料金 0 円）
-                            rid = lg.reserve(s.budget, "transcribe", st.session_state.get("access_code", ""), 0.0,
-                                             "transcribe", minutes)
-                            lg.finalize(rid, "成功", 0.0, minutes=minutes)
-                        st.session_state.session_transcribe_min = used + minutes
-                        rec = _new_recording(p, {**meta, "file_name": fname}, build_utterances(segs),
-                                             f"{eng['label']}（モデル {s.whisper_model}）",
-                                             {"start": round(start_m * 60, 1), "end": round(end_m * 60, 1)}, info, h)
-                        st.session_state.setdefault("media", {})[rec["id"]] = data
-                        state.flash(f"{rec['id']} の文字起こしが完了しました（{len(rec['utterances'])}区間）。話者と内容を確認してください。")
-                        st.session_state.sel_rec = rec["id"]
-                        st.session_state._goto_view = "発言の確認"
-                    except (MediaError, ValueError) as e:
-                        st.error(str(e))
-                    except Exception as e:  # モデル取得失敗・メモリ不足など
-                        st.error(f"文字起こしに失敗しました（{type(e).__name__}）。代替として会議ツールの文字起こしを読み込めます。")
-                    finally:
-                        st.session_state.tr_busy = False
-                        st.session_state.pop("rec_demo_bytes", None)
-                    if st.session_state.get("_goto_view") == "発言の確認":
-                        st.rerun()
+            media_panel(p, data, fname)
 
     section("代替：会議ツールの文字起こし・SRT・VTT・時刻付き文章を読み込む")
     with box():
@@ -168,21 +177,24 @@ def register(p):
                 state.flash(f"{rec['id']} に{len(cues)}件の発言を取り込みました。"
                             + (f"時刻のない発言が{no_time}件あります（時刻は作成していません）。" if no_time else ""))
                 st.session_state.sel_rec = rec["id"]
-                st.session_state._goto_view = "発言の確認"
+                st.session_state._goto_view = "発言の確認"; st.session_state.open_item = ("rec", st.session_state.sel_rec)
                 st.rerun()
         st.caption("字幕を取り込んだだけでは、録画の音声処理を行ったことにはなりません（処理方法に「文字起こし読込」と記録されます）。")
 
 
 # ------------------------------------------------------------------
-def review(p):
+def review(p, rec_id: str | None = None):
     recs = p["recordings"]
     if not recs:
-        st.info("録画・文字起こしがまだありません。「録画を登録」から追加してください。")
+        st.info("録画・文字起こしがまだありません。")
         return
     ids = [r["id"] for r in recs]
-    cur = st.session_state.get("sel_rec")
-    rid = st.selectbox("確認する録画", ids, index=ids.index(cur) if cur in ids else 0,
-                       format_func=lambda i: f"{i}：{next(r for r in recs if r['id'] == i).get('meeting_name') or '（名称なし）'}")
+    if rec_id in ids:
+        rid = rec_id
+    else:
+        cur = st.session_state.get("sel_rec")
+        rid = st.selectbox("確認する録画", ids, index=ids.index(cur) if cur in ids else 0,
+                           format_func=lambda i: f"{i}：{next(r for r in recs if r['id'] == i).get('meeting_name') or '（名称なし）'}")
     st.session_state.sel_rec = rid
     rec = next(r for r in recs if r["id"] == rid)
     media = st.session_state.get("media", {})

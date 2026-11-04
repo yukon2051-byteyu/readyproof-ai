@@ -70,10 +70,10 @@ def tour_bar(current: str) -> None:
     i = t["step"]
     with st.container(key="tour"):
         if i >= len(steps):
-            st.markdown(badge("ガイド付きデモ 完了", "green", "flag") + " **お疲れさまでした。**"
-                        "資料の照合から、質問・依頼・テスト・判断までの流れを一通り見ました。")
-            c1, c2, _ = st.columns([1.2, 1.2, 3])
-            if c1.button("ホームで別のデモを選ぶ", key="tour_home"):
+            st.markdown(badge("デモ完了", "green", "flag")
+                        + "製品の資料と自社のルールを入力すると、診断結果と受入テスト書ができる流れを一通り見ました。")
+            c1, c2, _ = st.columns([1.6, 1, 2.4])
+            if c1.button("ホームで別のデモを選ぶ", key="tour_home", width="stretch"):
                 st.session_state.pop("tour", None)
                 state.goto("home")
             if c2.button("ガイドを閉じる", key="tour_close_done", type="tertiary"):

@@ -160,20 +160,6 @@ def detail(p, r):
         if dg.get("reviewed_by"):
             st.caption(f"前回の確認：{dg['reviewed_by']}（自己申告）{dg['reviewed_at']}")
 
-    c1, c2, c3 = st.columns(3)
-    if c1.button("質問を作る", key=f"toq_{r['id']}", icon=":material/help:"):
-        st.session_state.prefill_question = {"req_ids": [r["id"]], "diag_id": dg["id"],
-                                             "background": f"{r['id']}「{r['business']}」の診断：{dg['category']}。{dg['reason']}",
-                                             "question": "", "points": "\n".join(dg["remaining_conditions"])}
-        st.session_state._goto_qview = "質問"
-        state.goto("questions")
-    if c2.button("対応方法を検討", key=f"toa_{r['id']}", icon=":material/build:"):
-        st.session_state.sel_action_req = r["id"]
-        st.session_state._goto_qview = "対応方法"
-        state.goto("questions")
-    if c3.button("テストへ", key=f"tot_{r['id']}", icon=":material/science:"):
-        st.session_state.test_filter_req = r["id"]
-        state.goto("tests")
     olds = [d for d in p["diagnoses"] if d["req_id"] == r["id"] and d.get("superseded_by")]
     if olds:
         with st.expander(f"以前の診断（{len(olds)}件・最新には流用しません）"):

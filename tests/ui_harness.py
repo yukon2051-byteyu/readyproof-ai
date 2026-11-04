@@ -7,12 +7,10 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import streamlit as st  # noqa: E402
 
 from readyproof.ui import state  # noqa: E402
-from readyproof.ui.pages import (data_page, decision, diagnosis, home, project_page, questions,  # noqa: E402
-                                 requirements, settings_page, sources, tests)
+from readyproof.ui.pages import data_page, home, settings_page, step1, step2, step3, step4  # noqa: E402
 from readyproof.ui.theme import inject_css  # noqa: E402
 
-PAGES = {"home": home, "project": project_page, "sources": sources, "requirements": requirements,
-         "diagnosis": diagnosis, "questions": questions, "tests": tests, "decision": decision,
+PAGES = {"home": home, "input1": step1, "input2": step2, "result": step3, "tests": step4,
          "data": data_page, "settings": settings_page}
 inject_css()
 state.show_flash()

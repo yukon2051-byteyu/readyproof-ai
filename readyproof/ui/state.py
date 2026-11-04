@@ -37,7 +37,8 @@ def set_project(p: dict, demo_initial: dict | None = None) -> None:
     st.session_state.demo_initial = copy.deepcopy(demo_initial) if demo_initial else None
     st.session_state.media = {}  # 録画本体（このセッションのメモリにだけ保持）
     for k in list(st.session_state.keys()):
-        if str(k).startswith(("sel_", "ed_", "form_")):
+        if str(k).startswith(("sel_", "ed_", "form_", "intake_")) or k in (
+                "open_item", "focus_req", "edit_req", "pending_media"):
             del st.session_state[k]
 
 
@@ -45,7 +46,13 @@ def user_name() -> str:
     return st.session_state.get("user_name", "").strip()
 
 
+# 以前の画面名 → 新しい4段階の画面
+ALIASES = {"project": "input1", "sources": "input1", "requirements": "input2", "diagnosis": "result",
+           "questions": "result", "decision": "tests"}
+
+
 def goto(key: str) -> None:
+    key = ALIASES.get(key, key)
     if key in PAGES:
         st.switch_page(PAGES[key])
 

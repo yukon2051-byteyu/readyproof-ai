@@ -15,6 +15,10 @@ def render():
         return
     context_bar("")
     page_title("案件・製品", "最初の版は1案件1候補製品を扱います。根拠（資料・録画）はこの製品に関連付けられます。")
+    project_form(p)
+
+
+def project_form(p):
     pj = p["project"]
     with st.form("form_project"):
         section("案件")
@@ -57,5 +61,3 @@ def render():
                     p["id_counters"]["products"] = 1
                 log(p, "案件・製品の更新", pj["id"], state.user_name())
                 st.success("保存しました。")
-    if p["products"] and st.button("次へ：製品の資料・営業説明を登録", icon=":material/arrow_forward:"):
-        state.goto("sources")

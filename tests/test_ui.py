@@ -9,7 +9,7 @@ from readyproof.demos.builder import build
 
 HARNESS = os.path.join(os.path.dirname(__file__), "ui_harness.py")
 APP = os.path.join(os.path.dirname(os.path.dirname(__file__)), "app.py")
-PAGES = ["home", "project", "sources", "requirements", "diagnosis", "questions", "tests", "decision", "data", "settings"]
+PAGES = ["home", "input1", "input2", "result", "tests", "data", "settings"]
 
 
 def page(name, project=None, **state):
@@ -40,6 +40,7 @@ def test_home_shows_tagline_and_demos():
     assert TAGLINE.replace("「", "").split("」")[0][:8] in t.replace("「", "")
     assert "ReadyProof" in t and "AI受入テスト・導入確認支援システム" in t
     assert [b.label for b in at.button].count("このデモを始める") == 3
+    assert "3分デモを始める（経費精算サービスの導入）" in [b.label for b in at.button]
 
 
 def test_open_demo_from_home():
@@ -50,7 +51,7 @@ def test_open_demo_from_home():
 
 
 def test_demo_ai_panel_never_offers_paid_run():
-    at = page("diagnosis", build("demo1"), form_ai_diag_reqs=["REQ-001"])
+    at = page("result", build("demo1"), form_ai_diag_reqs=["REQ-001"], show_ai_diag=True)
     assert "デモでは有料のAI処理を使いません" in texts(at)
     assert not [b for b in at.button if b.label == "AIで下書きを作る"]
 
@@ -59,7 +60,7 @@ def test_no_api_key_explains_and_manual_still_works():
     from readyproof.core import new_project
 
     p = new_project("手動案件")
-    at = page("requirements", p)
+    at = page("input2", p)
     assert not at.exception
     at = page("settings", p)
     assert "APIキーが設定されていません" in texts(at)
@@ -67,7 +68,7 @@ def test_no_api_key_explains_and_manual_still_works():
 
 def test_pass_without_confirmed_expected_blocked_in_ui():
     p = build("demo3")  # T-002 は期待結果が未確定の下書き
-    at = page("tests", p, sel_test="T-002", user_name="テスト実施者")
+    at = page("tests", p, sel_test="T-002", user_name="テスト実施者")  # ④ 受入テスト書でT-002を開いた状態
     at.selectbox[[s.label for s in at.selectbox].index("合否")].set_value("合格")
     at.text_area[[t.label for t in at.text_area].index("実際の結果（何が起きたか）")].set_value("ログインできなかった")
     at.button[[b.label for b in at.button].index("記録する")].click().run()

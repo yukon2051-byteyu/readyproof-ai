@@ -230,7 +230,7 @@ def intake_view(p):
         for d in drafts:
             st.markdown(f"- **{esc(d['business'])}**（{esc(d['priority'])}）：{esc(d['rules'])}"
                         + (f"　:orange[未確定：{esc(d['open_issues'])}]" if d.get("open_issues") else ""))
-        with st.expander("回答の原文（要件の「元の文章」に残ります）"):
+        if st.toggle("回答の原文を見る（要件の「元の文章」に残ります）", key="intake_show_src"):
             st.text(transcript(tid, ans))
         c1, c2, _ = st.columns([1.4, 1, 2])
         if c1.button("下書きとして登録", type="primary", disabled=not drafts, width="stretch"):

@@ -13,7 +13,7 @@ import streamlit as st
 from ...config import APP_NAME_JA
 from ...core import new_project
 from ...demos.builder import DEMOS, build
-from ...export.excel import report_workbook
+from ...export.excel import acceptance_test_workbook
 from ...export.jsonio import LoadError, from_json_bytes
 from .. import state
 from ..components import start_tour
@@ -35,13 +35,10 @@ MOTIF = (
     '<path d="M126 147 l11 11 l22 -24" fill="none" stroke="#14263F" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>'
     '</svg>')
 
-FLOW = [("資料を読む", "スライド・表を位置付きで"), ("照合する", "根拠付きで6区分に診断"),
-        ("質問・依頼", "不明点は質問、不足は依頼書"), ("試す", "人が実機でテスト・再テスト"), ("判断する", "残件を見て人が判断")]
-WHAT = [
-    ("照合する", "資料のページ・スライドや営業の発言時刻を根拠に、自社のルールに合うかを6区分で整理します。"),
-    ("確認・依頼する", "不明点はベンダーへの質問に、合わない部分は対応方法を比べて改修・設定変更の依頼書にします。"),
-    ("試して判断する", "受入テストを人が実機で試して記録し、残った問題を見ながら人が導入を判断します。"),
-]
+FLOW = [("入力1", "製品の資料", "提案書・機能一覧・マニュアル・営業説明の録画を入れる"),
+        ("入力2", "自社のルール", "質問に答えて、守るルール・例外・条件をまとめる"),
+        ("出力1", "診断結果", "要件ごとに、そのまま使えるかを根拠付きで判定"),
+        ("出力2", "受入テスト書", "実機で試す項目と結果を、Excel の受入テスト書に")]
 ROLES = [
     ("AI", "AI", "下書きを作る", "要件の分割、関連箇所の照合と診断、質問・対応案、依頼書とテストのたたき台"),
     ("PG", "プログラム", "確実に処理する", "読込と参照位置、版と状態の管理、引用の実在確認、古い根拠の検出、集計"),
@@ -56,8 +53,8 @@ DEMO_POINTS = {
 
 @st.cache_data(show_spinner=False)
 def sample_report() -> bytes:
-    """成果物の見本（デモ1の導入確認レポート）。架空データ・料金なし。"""
-    return report_workbook(build("demo1"))
+    """成果物の見本（デモ1の受入テスト書）。架空データ・料金なし。"""
+    return acceptance_test_workbook(build("demo1"))
 
 
 def _grid(items: list[str], cols: int | None = None) -> None:
@@ -76,41 +73,37 @@ def render():
         f'<div class="rp-hero">{MOTIF}<div class="inner"><div class="eyebrow">{esc(APP_NAME_JA)}</div>'
         '<div class="name">ReadyProof <span>AI</span></div>'
         '<div class="tag"><em>「うちの会社で使える？」</em>を、<br>資料の診断から改修依頼・テストまで支援。</div>'
-        '<div class="desc">製品の資料や営業説明と、自社の業務ルールを根拠付きで照合し、<br>'
-        '質問・依頼書・受入テスト・導入判断までつなげます。</div></div></div>', unsafe_allow_html=True)
+        '<div class="desc">製品の情報と自社の業務ルールを照合し、導入判断・受入テストまでつなげます。</div>'
+        '</div></div>', unsafe_allow_html=True)
 
     # ---- 3分デモ：開始 → 流れ → 成果物 ----
-    section("3分で体験する")
+    section("使い方は4段階：入力2つ → 出力2つ")
     left, right = st.columns([1.05, 1], gap="medium")
     with left:
         st.markdown('<div class="rp-flow">' + "".join(
-            f'<div class="st"><span class="rp-num">{i + 1}</span><div><b>{esc(t)}</b><br>'
-            f'<span class="rp-small">{esc(d)}</span></div></div>' for i, (t, d) in enumerate(FLOW)) + "</div>",
+            f'<div class="st"><span class="rp-num">{i + 1}</span><div><span class="rp-small">{esc(io)}</span>　<b>{esc(t)}</b><br>'
+            f'<span class="rp-small">{esc(d)}</span></div></div>' for i, (io, t, d) in enumerate(FLOW)) + "</div>",
             unsafe_allow_html=True)
         if st.button("3分デモを始める（経費精算サービスの導入）", type="primary", icon=":material/play_arrow:",
                      width="stretch", key="open_main"):
             _open_demo("demo1")
-        st.caption("架空の会社・資料で、画面の案内に沿って5ステップ。料金はかかりません。")
+        st.caption("架空の会社・資料で、画面の案内に沿って約3分。料金はかかりません。")
     with right:
         st.markdown(
-            '<div class="rp-result"><div class="h">最終的に手に入るもの</div>'
+            '<div class="rp-result"><div class="h">最終的に手に入るもの（デモ「経費精算サービスの導入」の結果）</div>'
             '<div class="row"><span class="lb">自社の要件</span><div>10,000円以上は、上司の承認後に部長が承認する</div></div>'
-            '<div class="row"><span class="lb">診断</span><div><b class="ok">標準設定で対応できる見込み</b></div></div>'
+            '<div class="row"><span class="lb">出力1 診断</span><div><b class="ok">設定すれば使える見込み</b></div></div>'
             '<div class="row"><span class="lb">根拠</span><div>ご提案資料 スライド2「承認ワークフロー」表3行目<br>'
             '<span class="q">『10,000円以上 ｜ 承認ルート：上長 → 部長』</span></div></div>'
-            '<div class="row"><span class="lb">実機テスト</span><div>10,000円ちょうど：<b class="ng">不合格</b>'
+            '<div class="row"><span class="lb">出力2 テスト</span><div>9,999円／10,000円の境界値テスト：<b class="ng">不合格</b>'
             ' → 設定変更 → <b class="ok">再テスト合格</b></div></div>'
-            '<div class="row"><span class="lb">出力</span><div>導入確認レポート・ベンダーへの質問書・改修依頼書（Excel）</div></div>'
-            '<div class="foot">架空のデモ「経費精算サービスの導入」の実際の結果です。</div></div>',
+            '<div class="foot">診断結果と受入テスト書は、Excel でダウンロードできます。</div></div>',
             unsafe_allow_html=True)
-        st.download_button("成果物の見本（導入確認レポート.xlsx）をダウンロード", sample_report(),
-                           file_name="ReadyProof_サンプル_導入確認レポート.xlsx", mime=XLSX, icon=":material/download:",
+        st.download_button("見本：受入テスト書（Excel）をダウンロード", sample_report(),
+                           file_name="ReadyProof_サンプル_受入テスト書.xlsx", mime=XLSX, icon=":material/download:",
                            width="stretch")
 
     # ---- できること・役割分担 ----
-    section("このアプリでできること")
-    _grid([f'<div class="rp-card"><div class="t"><span class="rp-num">{i + 1}</span>{esc(t)}</div><div class="b">{esc(b)}</div></div>'
-           for i, (t, b) in enumerate(WHAT)])
     section("AI・プログラム・人の役割分担")
     _grid([f'<div class="rp-card role"><div class="t"><span class="rp-num">{esc(m)}</span>{esc(w)}：{esc(d)}</div>'
            f'<div class="b">{esc(x)}</div></div>' for m, w, d, x in ROLES])

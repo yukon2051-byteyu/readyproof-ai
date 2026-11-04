@@ -161,12 +161,14 @@ def detail(p, t):
                         unsafe_allow_html=True)
         if lr and lr["result"] == "不合格":
             if st.button("この不合格から依頼書を作る", icon=":material/edit_note:", key=f"t2cr_{t['id']}"):
-                st.session_state.prefill_request = {
-                    "title": f"{t['title']}（不合格）", "kind": "不具合修正依頼", "phase": "テストで発生した現象",
-                    "req_ids": t["req_ids"], "run_ids": [lr["id"]], "actual_behavior": lr["actual"],
-                    "needed_behavior": t["expected"]}
-                st.session_state._goto_qview = "依頼書"
-                state.goto("questions")
+                c = rules.add_request(p, {"title": f"{t['title']}（不合格）", "kind": "不具合修正依頼",
+                                          "phase": "テストで発生した現象", "req_ids": t["req_ids"], "run_ids": [lr["id"]],
+                                          "test_ids": [t["id"]], "actual_behavior": lr["actual"],
+                                          "needed_behavior": t["expected"], "acceptance_criteria": t["expected"],
+                                          "repro_steps": t["steps"], "priority": "高"})
+                st.session_state.focus_req = t["req_ids"][0] if t["req_ids"] else None
+                state.flash(f"{c['id']}（下書き）を作りました。③ 診断結果の該当する要件で確認してください。")
+                state.goto("result")
             st.caption("要件との違いがあっても、合意済みの仕様か追加要望かを確認してから区分を選んでください（不具合と断定しない）。")
 
 

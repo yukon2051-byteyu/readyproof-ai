@@ -8,8 +8,7 @@ import streamlit as st
 
 from readyproof.config import APP_NAME_EN
 from readyproof.ui import state
-from readyproof.ui.pages import (data_page, decision, diagnosis, home, project_page, questions, requirements,
-                                 settings_page, sources, tests)
+from readyproof.ui.pages import data_page, home, settings_page, step1, step2, step3, step4
 from readyproof.ui.theme import inject_css
 
 st.set_page_config(page_title=APP_NAME_EN, page_icon=":material/fact_check:", layout="wide",
@@ -21,13 +20,10 @@ st.logo(os.path.join(_ASSETS, "logo.svg"), size="large", icon_image=os.path.join
 P = st.Page
 pages = {
     "home": P(home.render, title="ホーム", icon=":material/home:", url_path="home", default=True),
-    "project": P(project_page.render, title="案件・製品", icon=":material/business_center:", url_path="project"),
-    "sources": P(sources.render, title="1 製品の資料・営業説明", icon=":material/description:", url_path="sources"),
-    "requirements": P(requirements.render, title="2 自社の仕事・ルール", icon=":material/rule:", url_path="requirements"),
-    "diagnosis": P(diagnosis.render, title="3 自社に合うかを確認", icon=":material/fact_check:", url_path="diagnosis"),
-    "questions": P(questions.render, title="4 質問・対応依頼", icon=":material/forum:", url_path="questions"),
-    "tests": P(tests.render, title="5 試すこと・実施結果", icon=":material/science:", url_path="tests"),
-    "decision": P(decision.render, title="6 残った問題と導入判断", icon=":material/gavel:", url_path="decision"),
+    "input1": P(step1.render, title="① 製品の資料", icon=":material/description:", url_path="product"),
+    "input2": P(step2.render, title="② 自社のルール", icon=":material/rule:", url_path="rules"),
+    "result": P(step3.render, title="③ 診断結果", icon=":material/fact_check:", url_path="result"),
+    "tests": P(step4.render, title="④ 受入テスト書", icon=":material/task_alt:", url_path="tests"),
     "data": P(data_page.render, title="保存・Excel出力", icon=":material/save:", url_path="data"),
     "settings": P(settings_page.render, title="設定・利用枠", icon=":material/tune:", url_path="settings"),
 }
@@ -35,7 +31,7 @@ state.PAGES.update(pages)
 
 nav = st.navigation({
     "": [pages["home"]],
-    "作業": [pages[k] for k in ("project", "sources", "requirements", "diagnosis", "questions", "tests", "decision")],
+    "導入確認の流れ": [pages[k] for k in ("input1", "input2", "result", "tests")],
     "管理": [pages["data"], pages["settings"]],
 })
 
