@@ -80,7 +80,7 @@ def render():
            f'<div class="b">{esc(x)}</div></div>' for m, w, d, x in ROLES])
 
     # ---- 3分デモ：開始 → 流れ → 成果物 ----
-    section("使い方は4段階：入力2つ → 出力2つ", top="-7px")  # 上の余白を0.7cm詰める
+    section("使い方は4段階：入力2つ → 出力2つ", top="4.3px")  # 上の余白：当初より0.4cm短い（0.7cm詰めて0.3cm戻す）
     _grid([f'<div class="rp-card"><div class="t"><span class="rp-num">{i + 1}</span>{esc(t)}</div>'
            f'<div class="m" style="margin-top:0;padding-top:0">{esc(io)}</div><div class="b">{esc(d)}</div></div>'
            for i, (io, t, d) in enumerate(FLOW)])
