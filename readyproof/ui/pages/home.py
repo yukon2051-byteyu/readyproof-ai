@@ -76,7 +76,7 @@ def render():
         '</div></div>', unsafe_allow_html=True)
 
     section("AIと人の役割分担")
-    _grid([f'<div class="rp-card role"><div class="t"><span class="rp-num">{esc(m)}</span>{esc(w)}：{esc(d)}</div>'
+    _grid([f'<div class="rp-card role"><div class="t"><span class="rp-num">{esc(m)}</span>{esc(d)}</div>'
            f'<div class="b">{esc(x)}</div></div>' for m, w, d, x in ROLES])
 
     # ---- 3分デモ：開始 → 流れ → 成果物 ----
