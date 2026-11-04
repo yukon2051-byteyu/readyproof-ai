@@ -127,7 +127,7 @@ def test_ledger_counts_success_and_failure(tmp_path, settings):
     # 本文・コードの平文は記録しない
     raw = (tmp_path / "u.jsonl").read_text(encoding="utf-8")
     assert "CODE1" not in raw and "あああ" not in raw and code_hash("CODE1") in raw
-    assert b.monthly_budget_jpy == 3000
+    assert b.monthly_budget_jpy == 6000
 
 
 def test_unknown_cost_on_crash_keeps_estimate(tmp_path, settings):

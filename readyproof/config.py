@@ -68,7 +68,7 @@ class Limits:
 
 @dataclass
 class Budget:
-    monthly_budget_jpy: int = 3_000
+    monthly_budget_jpy: int = 6_000  # 利用者の決定（2026-11-04）：月6,000円
     ai_runs_per_code_per_month: int = 3
     ai_runs_global_per_month: int = 60
     transcribe_minutes_per_code_per_month: int = 30
