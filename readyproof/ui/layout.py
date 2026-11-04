@@ -6,7 +6,6 @@ import streamlit as st
 from ..core import primary_product
 from ..logic.rules import current_diagnosis, latest_run
 from . import state
-from .components import tour_bar
 from .theme import esc
 
 STEPS = [
@@ -49,15 +48,39 @@ def stepper(current: str) -> None:
                 f'<div class="rp-stepper">{"".join(items)}</div>', unsafe_allow_html=True)
 
 
+def _demo_step(p: dict, key: str) -> dict | None:
+    from ..demos.tour import TOURS
+
+    demo = p["project"].get("demo_id")
+    return next((s for s in TOURS.get(demo, []) if s["page"] == key), None) if demo else None
+
+
+def apply_demo_state(p: dict, key: str) -> None:
+    """デモで画面を移るとき、その画面で見てほしい項目（スライド・要件・テスト）を開いておく。"""
+    from ..demos.tour import TABLE_KEYS
+
+    s = _demo_step(p, key)
+    if not s:
+        return
+    for k in TABLE_KEYS:
+        st.session_state.pop(k, None)
+    for k, v in s["state"].items():
+        st.session_state[k] = v
+
+
 def header(key: str, title: str, desc: str) -> dict | None:
-    """画面の先頭：デモの案内（デモ中のみ）→ 進み具合 → 画面名と説明。案件がなければ案内して None。"""
+    """画面の先頭：進み具合 → 画面名と説明 →（デモのときだけ）このデモの見どころ。案件がなければ案内して None。"""
     p = state.require_project()
     if not p:
         return None
-    tour_bar(key)
     stepper(key)
     st.markdown(f'<div class="rp-title">{esc(title)}</div><div class="rp-desc">{esc(desc)}</div>',
                 unsafe_allow_html=True)
+    s = _demo_step(p, key)
+    if s:
+        point = s["title"].split("：", 1)[-1]
+        st.markdown(f'<div class="rp-demo"><span class="lb">このデモの見どころ</span>{esc(point)}'
+                    f'<div class="pt">{"<br>".join(esc(x) for x in s["points"])}</div></div>', unsafe_allow_html=True)
     return p
 
 
@@ -65,4 +88,7 @@ def next_button(label: str, page_key: str) -> None:
     st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
     _, c = st.columns([3, 1.4])
     if c.button(label, type="primary", icon=":material/arrow_forward:", width="stretch", key=f"next_{page_key}"):
+        p = state.project()
+        if p:
+            apply_demo_state(p, page_key)
         state.goto(page_key)

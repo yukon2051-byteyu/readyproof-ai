@@ -19,7 +19,6 @@ def context_bar(current: str) -> None:
     p = state.project()
     if not p:
         return
-    tour_bar(current)
     prod = primary_product(p) or {}
     demo = "架空のデモ ／ " if p["project"].get("demo_id") else ""
     step = f"{STEPS[current]} ／ " if current in STEPS else ""
@@ -37,62 +36,13 @@ def page_title(title: str, help_text: str = "") -> None:
 
 # ---------------- ガイド付きデモ ----------------
 def start_tour(demo_id: str) -> None:
-    st.session_state.tour = {"demo": demo_id, "step": 0}
-    go_step(0)
+    """デモを開く：最初の画面（① 製品の資料）へ移り、見てほしい項目を開いておく。"""
+    from .layout import apply_demo_state
 
-
-def go_step(i: int) -> None:
-    from ..demos.tour import TABLE_KEYS, TOURS
-
-    t = st.session_state.get("tour")
-    if not t:
-        return
-    steps = TOURS[t["demo"]]
-    t["step"] = i
-    if i >= len(steps):
-        state.goto("decision")
-        return
-    for k in TABLE_KEYS:  # 前の画面の表の選択が、次に選ぶ項目を上書きしないようにする
-        st.session_state.pop(k, None)
-    for k, v in steps[i]["state"].items():
-        st.session_state[k] = v
-    state.goto(steps[i]["page"])
-
-
-def tour_bar(current: str) -> None:
-    from ..demos.tour import TOURS
-
-    t = st.session_state.get("tour")
     p = state.project()
-    if not t or not p or p["project"].get("demo_id") != t["demo"]:
-        return
-    steps = TOURS[t["demo"]]
-    i = t["step"]
-    with st.container(key="tour"):
-        if i >= len(steps):
-            st.markdown(badge("デモ完了", "green", "flag")
-                        + "製品の資料と自社のルールを入力すると、診断結果と受入テスト仕様書ができる流れを一通り見ました。")
-            c1, c2, _ = st.columns([1.6, 1, 2.4])
-            if c1.button("ホームで別のデモを選ぶ", key="tour_home", width="stretch"):
-                st.session_state.pop("tour", None)
-                state.goto("home")
-            if c2.button("ガイドを閉じる", key="tour_close_done", type="tertiary"):
-                st.session_state.pop("tour", None)
-                st.rerun()
-            return
-        s = steps[i]
-        left, right = st.columns([5, 2], vertical_alignment="center")
-        left.markdown(badge(f"デモ {i + 1}/{len(steps)}", "blue", "explore") + f" **{s['title']}**")
-        left.markdown("<div class='rp-small'>" + "<br>".join(esc(x) for x in s["points"]) + "</div>",
-                      unsafe_allow_html=True)
-        b1, b2 = right.columns(2)
-        if b1.button("前へ", key="tour_prev", disabled=i == 0, width="stretch"):
-            go_step(i - 1)
-        if b2.button("まとめへ" if i == len(steps) - 1 else "次へ", key="tour_next", type="primary", width="stretch"):
-            go_step(i + 1)
-        if right.button("ガイドを閉じる", key="tour_close", type="tertiary", width="stretch"):
-            st.session_state.pop("tour", None)
-            st.rerun()
+    if p:
+        apply_demo_state(p, "input1")
+    state.goto("input1")
 
 
 def _mark(text: str, quote: str) -> str:

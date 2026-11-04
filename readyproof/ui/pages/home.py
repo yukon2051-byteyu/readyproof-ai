@@ -40,8 +40,8 @@ FLOW = [("入力1", "製品の資料", "提案書・機能一覧・マニュア�
         ("出力1", "診断結果", "要件ごとに、そのまま使えるかを根拠付きで判定"),
         ("出力2", "受入テスト", "実機で確認すべき項目をテスト仕様書に")]
 ROLES = [
-    ("AI", "AI", "下書きを作る", "資料と自社のルールの照合・診断、ベンダーへの質問、依頼書とテスト仕様書"),
-    ("人", "人", "確定・判断する", "AIの下書きの確認と確定、実機でのテスト、導入するかの判断"),
+    ("AI", "AI", "照合・診断・テスト仕様書", "資料と自社のルールの照合・診断、ベンダーへの質問、依頼書とテスト仕様書"),
+    ("人", "人", "判断・テスト", "AIの診断の確認、導入判断、実機でのテスト"),
 ]
 DEMO_POINTS = {
     "demo1": ["スライドの表から根拠を引用", "記載なし → 質問 → 回答で更新", "境界値テストの不合格 → 設定変更 → 再テスト"],
@@ -108,7 +108,6 @@ def render():
         c1, c2 = st.columns([3, 1], vertical_alignment="bottom")
         name = c1.text_input("案件名", placeholder="例：勤怠管理サービスの導入", key="new_project_name")
         if c2.button("作成する", icon=":material/add:", disabled=not name.strip(), width="stretch"):
-            st.session_state.pop("tour", None)
             state.set_project(new_project(name.strip()))
             state.flash("新しい案件を作成しました。まず製品の情報を登録してください。")
             state.goto("project")
@@ -120,7 +119,6 @@ def render():
             except LoadError as e:
                 st.error(f"開けませんでした：{e}（今の作業はそのままです）")
             else:
-                st.session_state.pop("tour", None)
                 state.set_project(p)
                 state.flash("案件を開きました。資料・録画の元ファイルは含まれていません。")
                 state.goto("decision")

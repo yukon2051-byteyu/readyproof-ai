@@ -9,7 +9,7 @@ from ...logic import rules
 from ...logic.stale import run_stale_reasons, test_stale_reasons
 from ...testgen import draft_tests
 from .. import state
-from ..layout import header
+from ..layout import header, next_button
 from ..theme import RESULT_TONE, badge, box, chip, esc, section, tiles
 from . import decision, tests
 
@@ -41,7 +41,7 @@ def render():
         st.rerun()
     c3.download_button("導入確認レポート", report_workbook(p), file_name=f"{p['project']['id']}_導入確認レポート.xlsx",
                        mime=XLSX, icon=":material/description:", width="stretch")
-    if not st.session_state.get("tour") and st.toggle("AIでテスト仕様を作る", key="show_ai_tests"):
+    if not p["project"].get("demo_id") and st.toggle("AIでテスト仕様を作る", key="show_ai_tests"):
         with box():
             reqs = [r for r in p["requirements"] if r["status"] == "確定"]
             if reqs:
@@ -59,6 +59,8 @@ def render():
 
     section("残った問題と導入判断")
     decision.decision_section(p, show_stats=False)
+    if p["project"].get("demo_id"):
+        next_button("デモはここまでです。ホームへ（ほかのデモを見る）", "home")
 
 
 def row(p, t, opened: bool):

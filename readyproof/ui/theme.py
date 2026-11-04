@@ -145,6 +145,13 @@ mark.rp-mark {{ background: #BFE9FC; color: inherit; padding: 0 2px; border-radi
 .rp-item .h {{ font-weight: 700; color: {NAVY}; }}
 .rp-item .s {{ font-size: .84rem; color: {MUTED}; }}
 
+/* デモの見どころ（画面の一部。閉じない） */
+.rp-demo {{ background: #FFF8E6; border: 1px solid #F0D58A; border-left: 4px solid #E0B84A; border-radius: 8px;
+  padding: 8px 14px; margin: -4px 0 14px; color: #3D2E05; font-weight: 600; }}
+.rp-demo .lb {{ display: inline-block; font-size: .75rem; font-weight: 700; color: #7A5B00; background: #FBE7A6;
+  border-radius: 999px; padding: 1px 10px; margin-right: 10px; }}
+.rp-demo .pt {{ font-size: .84rem; font-weight: 400; color: #5B4A1E; margin-top: 3px; }}
+
 /* ガイド付きデモの帯 */
 .st-key-tour {{ background: #FFFFFF; border: 1px solid {BORDER}; border-left: 5px solid {ACCENT}; border-radius: 10px;
   padding: 10px 14px 8px; margin-bottom: 6px; box-shadow: 0 1px 3px rgba(20, 38, 63, .08); }}
