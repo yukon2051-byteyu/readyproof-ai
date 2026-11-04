@@ -1,4 +1,20 @@
-# Streamlit Community Cloud への公開手順
+# 公開手順
+
+## 現在の公開先：Hugging Face Spaces（Docker方式）
+公開URL：https://yukon2051-readyproof-ai.hf.space　管理画面：https://huggingface.co/spaces/yukon2051/readyproof-ai
+
+- Docker方式のスペースは有料プラン（PRO・月9ドル）が必要（2026-11-04時点）。サーバーは無料の CPU basic（2vCPU・16GB）
+- 実行環境は `Dockerfile`（Python 3.12、`requirements.txt`、ポート7860）
+- 更新方法：GitHub にコミットした後、次を実行（`.streamlit/secrets.toml` の `HF_TOKEN` を使う。GitHub のリポジトリは変更しない）
+  ```powershell
+  .venv\Scripts\python scripts\deploy_hf.py yukon2051
+  ```
+- Spaces はアプリを埋め込み表示するため、ファイルのアップロードが動くよう XSRF 対策を無効にしている（認証のない公開デモ用途に限定）
+- 公開版には APIキーを設定しない（有料AIは停止）。実在の社内資料をアップロードしないよう案内する
+
+## 以前の公開先：Streamlit Community Cloud（断念）
+以下は当初の手順。画面が表示されなかった経緯は `test_results.md` 2-3 を参照。
+
 
 ## 前提
 - GitHub アカウントと、このフォルダを置くリポジトリ（公開リポジトリ推奨。ポートフォリオとして閲覧してもらうため）
