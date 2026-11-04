@@ -40,7 +40,8 @@ def stepper(current: str) -> None:
     items = []
     for i, (key, name, io) in enumerate(STEPS):
         n, sub = c[key]
-        cls = ("cur" if key == current else ("done" if n else "")) + (" out" if io != "入力1" and io != "入力2" else "")
+        kind = " out" if io.startswith("出力") else (" judge" if io == "判断" else "")  # 入力=水色・出力=金色・判断=緑
+        cls = ("cur" if key == current else ("done" if n else "")) + kind
         items.append(f'<div class="rp-step {cls}"><span class="no">{i + 1}</span><div><div class="io">{esc(io)}</div>'
                      f'<div class="nm">{esc(name)}</div><div class="sb">{esc(sub)}</div></div></div>')
     prod = primary_product(p) or {}
@@ -75,6 +76,7 @@ def header(key: str, title: str, desc: str) -> dict | None:
     p = state.require_project()
     if not p:
         return None
+    scroll_top_on_page_change(key)
     stepper(key)
     st.markdown(f'<div class="rp-title">{esc(title)}</div><div class="rp-desc">{"<br>".join(esc(x) for x in desc.split(chr(10)))}</div>',
                 unsafe_allow_html=True)
@@ -94,3 +96,21 @@ def next_button(label: str, page_key: str, left=None) -> None:
             apply_demo_state(p, page_key)
         state.goto(page_key)
 
+
+
+_SCROLL_JS = """<script>
+const d = window.parent.document;
+const m = d.querySelector('[data-testid="stMain"]') || d.querySelector('section.main');
+if (m) { m.scrollTo(0, 0); }
+window.parent.scrollTo(0, 0);
+</script>"""
+
+
+def scroll_top_on_page_change(key: str) -> None:
+    """別の画面に移ったときは、ページの最上部から表示する（Streamlit は前の画面のスクロール位置を引き継ぐため）。"""
+    if st.session_state.get("_last_page") == key:
+        return
+    st.session_state["_last_page"] = key
+    import streamlit.components.v1 as components
+
+    components.html(_SCROLL_JS, height=0)

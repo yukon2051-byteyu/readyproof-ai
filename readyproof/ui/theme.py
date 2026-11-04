@@ -20,6 +20,8 @@ ACCENT = "#38BDF8"  # ブランドの差し色（明るい空色）。見出し�
 PAGE_BG = "#EEF2F7"
 GOLD = "#E0B84A"       # 金の差し色（出力・人の判断・実機の結果など、位置づけが違うものの区別に使う）
 GOLD_TEXT = "#8A6500"  # 白地に置く金色の文字（読みやすさのため濃くする）
+JUDGE = "#2F9E6E"  # 判断（人が決める工程）の色
+JUDGE_TEXT = "#1E7B45"
 PRIMARY = "#1F4E8C"
 MUTED = "#5B6574"
 BORDER = "#DDE3EA"
@@ -155,6 +157,12 @@ mark.rp-mark {{ background: #BFE9FC; color: inherit; padding: 0 2px; border-radi
 .rp-step.out.done .no, .rp-step.out.cur .no {{ background: {GOLD}; color: {NAVY}; }}
 .rp-step.out .io {{ color: {GOLD_TEXT}; }}
 .rp-step.out.cur .io {{ color: {GOLD}; }}
+.rp-step.judge.done {{ border-bottom-color: {JUDGE}; }}
+.rp-step.judge.done .no, .rp-step.judge.cur .no {{ background: {JUDGE}; color: #fff; }}
+.rp-step.judge .io {{ color: {JUDGE_TEXT}; }}
+.rp-step.judge.cur .io {{ color: #7FD3AE; }}
+/* 画面移動時に最上部へ戻すための見えない部品（高さ0）が、すき間を作らないようにする */
+div[data-testid="stElementContainer"]:has(> iframe[data-testid="stIFrame"]) {{ position: absolute; height: 0; margin: 0; overflow: hidden; }}
 .rp-tile.gold {{ border-top: 4px solid {GOLD}; }}
 
 /* 一覧の1行カード（左：内容、右：ボタン） */
