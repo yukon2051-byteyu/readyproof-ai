@@ -219,8 +219,10 @@ def quote(text: str) -> None:
     st.markdown(f'<div class="rp-quote">{esc(text)}</div>', unsafe_allow_html=True)
 
 
-def section(title: str) -> None:
-    st.markdown(f'<div class="rp-h">{esc(title)}</div>', unsafe_allow_html=True)
+def section(title: str, top: str | None = None) -> None:
+    """小見出し。top で上の余白を個別に調整できる（例："-7px"）。"""
+    style = f' style="margin-top:{top}"' if top else ""
+    st.markdown(f'<div class="rp-h"{style}>{esc(title)}</div>', unsafe_allow_html=True)
 
 
 def tiles(items: list[dict], cols: int | None = None) -> None:

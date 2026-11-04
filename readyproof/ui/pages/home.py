@@ -75,12 +75,12 @@ def render():
         '<div class="desc">製品の情報と自社の業務ルールを照合し、導入判断・受入テストまでつなげます。</div>'
         '</div></div>', unsafe_allow_html=True)
 
-    section("AIと人の役割分担")
+    section("AIと人の役割分担", top="-7px")  # 上の余白を0.7cm詰める
     _grid([f'<div class="rp-card role"><div class="t"><span class="rp-num">{esc(m)}</span>{esc(d)}</div>'
            f'<div class="b">{esc(x)}</div></div>' for m, w, d, x in ROLES])
 
     # ---- 3分デモ：開始 → 流れ → 成果物 ----
-    section("使い方は4段階：入力2つ → 出力2つ")
+    section("使い方は4段階：入力2つ → 出力2つ", top="-7px")  # 上の余白を0.7cm詰める
     _grid([f'<div class="rp-card"><div class="t"><span class="rp-num">{i + 1}</span>{esc(t)}</div>'
            f'<div class="m" style="margin-top:0;padding-top:0">{esc(io)}</div><div class="b">{esc(d)}</div></div>'
            for i, (io, t, d) in enumerate(FLOW)])
