@@ -120,14 +120,15 @@ def run_ai(fn, success_msg: str):
     st.rerun()
 
 
-def ai_panel(key: str, task_label: str, preview_text: str, max_tokens: int, details: list[str]):
+def ai_panel(key: str, task_label: str, preview_text: str, max_tokens: int, details: list[str],
+             button_label: str = "AIで下書きを作る"):
     """AI 実行前の確認パネル。実行可能なら AI クライアントを返す（ボタンが押されたとき）。
 
     デモ案件では有料処理を使わない。送信先・対象・費用見込みを事前に表示する。
     """
     s = state.settings()
     with box():
-        st.markdown(f"**AIで下書きを作る：{task_label}**")
+        st.markdown(f"**{button_label}：{task_label}**")
         if state.is_demo():
             st.info("デモでは有料のAI処理を使いません（表示中の結果は「準備済みのデモ結果」です）。新しい案件で利用できます。")
             return None
@@ -151,7 +152,7 @@ def ai_panel(key: str, task_label: str, preview_text: str, max_tokens: int, deta
             return None
         ok = st.checkbox("送信先と内容を確認しました（外部送信が許可された情報だけです）", key=f"ai_ok_{key}")
         busy = st.session_state.get("ai_busy", False)
-        if st.button("AIで下書きを作る", key=f"ai_run_{key}", type="primary", disabled=not ok or busy,
+        if st.button(button_label, key=f"ai_run_{key}", type="primary", disabled=not ok or busy,
                      icon=":material/auto_awesome:"):
             return ClaudeClient(s)
     return None

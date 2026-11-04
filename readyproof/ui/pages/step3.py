@@ -40,9 +40,7 @@ def render():
             state.goto("input2")
         return
     summary(p, reqs)
-    if st.toggle("AIで診断を作る・作り直す", key="show_ai_diag"):
-        with box():
-            diagnosis.ai_section(p, reqs)
+    ai_box(p, reqs)
     focus = st.session_state.get("focus_req")
     section("要件ごとの診断")
     for r in reqs:
@@ -50,6 +48,32 @@ def render():
     st.download_button("ベンダーへの質問書（Excel）をダウンロード", questionnaire_workbook(p),
                        file_name=f"{p['project']['id']}_質問書.xlsx", mime=XLSX, icon=":material/download:")
     next_button("次へ：④ 受入テスト", "tests")
+
+
+def ai_box(p, reqs):
+    """診断は常にAIで行う。未診断があれば実行欄を表示、すべて診断済みなら「やり直す」だけ表示。"""
+    confirmed = [r for r in reqs if r["status"] == "確定"]
+    undiag = [r["id"] for r in confirmed if not rules.current_diagnosis(p, r["id"])]
+    drafts = len(reqs) - len(confirmed)
+    if drafts:
+        st.caption(f"確定していない要件 {drafts}件は診断しません（② 自社のルールで確定すると診断の対象になります）。")
+    if undiag:
+        with box():
+            diagnosis.ai_section(p, reqs, default=undiag, title=f"AIで診断する（未診断 {len(undiag)}件）",
+                                 button_label="AIで診断する")
+        return
+    if not confirmed:
+        return
+    if st.session_state.get("rediag"):
+        with box():
+            diagnosis.ai_section(p, reqs, default=[r["id"] for r in confirmed], title="AIで診断をやり直す",
+                                 button_label="AIで診断をやり直す")
+            if st.button("やり直さない", key="rediag_close", type="tertiary"):
+                st.session_state.rediag = False
+                st.rerun()
+    elif st.button("AIで診断をやり直す", icon=":material/refresh:", key="rediag_open"):
+        st.session_state.rediag = True
+        st.rerun()
 
 
 def summary(p, reqs):
@@ -88,7 +112,7 @@ def card(p, r, focused: bool):
                     unsafe_allow_html=True)
         nq = sum(1 for q in p["questions"] if r["id"] in q.get("req_ids", []))
         ncr = sum(1 for c in p["requests"] if r["id"] in c.get("req_ids", []))
-        c1.caption(f"理由：{dg['reason']}" if dg else "資料・営業説明と照合して、判定を作ってください（上の「AIで診断を作る」または詳しく確認する）。")
+        c1.caption(f"理由：{dg['reason']}" if dg else "まだ診断していません（上の「AIで診断する」で診断します）。")
         if c2.button("閉じる" if focused else "詳しく確認する", key=f"fr_{r['id']}", width="stretch",
                      type="secondary" if focused else "primary"):
             st.session_state.focus_req = None if focused else r["id"]

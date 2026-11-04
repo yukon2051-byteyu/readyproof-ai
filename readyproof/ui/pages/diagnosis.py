@@ -85,9 +85,7 @@ def detail(p, r):
     st.markdown(f"<div class='rp-quote'>{esc(r['rules'] or r['workflow'])}</div>", unsafe_allow_html=True)
     dg = rules.current_diagnosis(p, r["id"])
     if not dg:
-        st.info("まだ診断がありません。下の「AIで診断の下書きを作る」か「手動で診断を作る」を使ってください。")
-        manual(p, r, None)
-        candidates(p, r, pid)
+        st.info("まだ診断がありません。画面上部の「AIで診断する」で診断してください。")
         return
     stale = diagnosis_stale_reasons(p, dg)
     st.markdown(category_chip(dg["category"]) + review_chip(dg["review_status"], dg["origin"])
@@ -166,8 +164,6 @@ def detail(p, r):
             for d in olds:
                 st.markdown(f"{category_chip(d['category'])}<span class='rp-small'>{esc(d['id'])} 要件第{d['req_version']}版／"
                             f"{esc(d['origin'])}／{esc(d['created_at'])}：{esc(d['reason'])}</span>", unsafe_allow_html=True)
-    with st.expander("診断を作り直す（手動）"):
-        manual(p, r, dg)
     candidates(p, r, pid)
 
 
@@ -219,25 +215,30 @@ def candidates(p, r, pid):
                             unsafe_allow_html=True)
 
 
-def ai_section(p, reqs):
+def ai_section(p, reqs, default: list | None = None, title: str = "AIで診断する",
+               button_label: str = "AIで診断する"):
+    """AIによる診断（有料）。対象の要件・送信内容・費用見込みを示してから実行する。"""
     s = state.settings()
     confirmed = [r for r in reqs if r["status"] == "確定"]
-    section("AIで診断の下書きを作る")
+    section(title)
     if not confirmed:
-        st.caption("確定した要件がありません。要件を人が確定してから診断します。")
+        st.caption("確定した要件がありません。② 自社のルールで要件を確定すると、診断できます。")
         return
-    sel = st.multiselect(f"対象の要件（確定済み・1回最大{s.limits.max_requirements_per_diagnosis}件）",
-                         [r["id"] for r in confirmed], max_selections=s.limits.max_requirements_per_diagnosis,
-                         key="form_ai_diag_reqs")
+    ids = [r["id"] for r in confirmed]
+    lim = s.limits.max_requirements_per_diagnosis
+    sel = st.multiselect(f"診断する要件（確定済み・1回最大{lim}件）", ids,
+                         default=[x for x in (default or []) if x in ids][:lim], max_selections=lim,
+                         key=f"form_ai_diag_reqs_{button_label}")
     if not sel:
+        st.caption("診断する要件を選んでください。")
         return
     prompt, refmap, cov = build_diagnosis_input(p, sel, state.product_id(), s)
     nohit = [k for k, v in cov.items() if v == 0]
     if nohit:
         st.caption("関連箇所が見つからない要件：" + "、".join(nohit) + "（AIには「抜粋なし」と伝え、情報不足として扱わせます）")
-    client = ai_panel("diag", f"{len(sel)}件の要件の診断", prompt, s.limits.max_ai_output_tokens,
-                      ["要件", f"検索で見つかった資料・発言の抜粋{len(refmap)}件"])
+    client = ai_panel(f"diag_{button_label}", f"{len(sel)}件の要件の診断", prompt, s.limits.max_ai_output_tokens,
+                      ["要件", f"資料・発言の抜粋{len(refmap)}件"], button_label=button_label)
     if client:
         run_ai(lambda: run_diagnosis(p, sel, state.product_id(), client, s, state.ledger(),
                                      st.session_state.get("access_code", "")),
-               "{n}件の診断（AI下書き）を作成しました。根拠を確認してください。")
+               "{n}件の要件を診断しました。根拠を確認してください。")

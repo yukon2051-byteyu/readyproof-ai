@@ -52,7 +52,7 @@ def test_open_demo_from_home():
 
 
 def test_demo_ai_panel_never_offers_paid_run():
-    at = page("result", build("demo1"), form_ai_diag_reqs=["REQ-001"], show_ai_diag=True)
+    at = page("result", build("demo1"), rediag=True)
     assert "デモでは有料のAI処理を使いません" in texts(at)
     assert not [b for b in at.button if b.label == "AIで下書きを作る"]
 
