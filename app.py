@@ -30,6 +30,7 @@ pages = {
     "settings": P(settings_page.render, title="設定・利用枠", icon=":material/tune:", url_path="settings"),
 }
 state.PAGES.update(pages)
+state.restore()  # 接続が切れて新しい画面になった場合、URLの識別子から作業を復元する
 
 sections = {"": [pages["home"]],
             "導入確認の流れ": [pages[k] for k in ("input1", "input2", "result", "tests", "decision")]}
@@ -57,3 +58,4 @@ with st.sidebar:
 
 state.show_flash()
 nav.run()
+state.persist()

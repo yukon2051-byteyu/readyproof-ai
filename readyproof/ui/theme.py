@@ -18,6 +18,8 @@ import streamlit as st
 NAVY = "#14263F"
 ACCENT = "#38BDF8"  # ブランドの差し色（明るい空色）。見出し帯・見出しの縦線・番号に使う
 PAGE_BG = "#EEF2F7"
+GOLD = "#E0B84A"       # 金の差し色（出力・人の判断・実機の結果など、位置づけが違うものの区別に使う）
+GOLD_TEXT = "#8A6500"  # 白地に置く金色の文字（読みやすさのため濃くする）
 PRIMARY = "#1F4E8C"
 MUTED = "#5B6574"
 BORDER = "#DDE3EA"
@@ -142,6 +144,18 @@ mark.rp-mark {{ background: #BFE9FC; color: inherit; padding: 0 2px; border-radi
 .rp-step.cur .io, .rp-step.cur .sb {{ color: #B9C7DA; }}
 .rp-step.cur .nm {{ color: #fff; }}
 
+/* 金の差し色：入力と出力、見込みと実機結果など、位置づけの違うものを並べたときに使う */
+.rp-h.gold {{ border-left-color: {GOLD}; }}
+.rp-card.out {{ border-top-color: {GOLD}; }}
+.rp-card.out .rp-num, .rp-num.gold {{ color: {GOLD}; }}
+.rp-card.out .m {{ color: {GOLD_TEXT}; font-weight: 700; }}
+.rp-card .m.in {{ color: #1F6F99; font-weight: 700; }}
+.rp-step.out.done {{ border-bottom-color: {GOLD}; }}
+.rp-step.out.done .no, .rp-step.out.cur .no {{ background: {GOLD}; color: {NAVY}; }}
+.rp-step.out .io {{ color: {GOLD_TEXT}; }}
+.rp-step.out.cur .io {{ color: {GOLD}; }}
+.rp-tile.gold {{ border-top: 4px solid {GOLD}; }}
+
 /* 一覧の1行カード（左：内容、右：ボタン） */
 .rp-item .h {{ font-weight: 700; color: {NAVY}; }}
 .rp-item .s {{ font-size: .84rem; color: {MUTED}; }}
@@ -213,10 +227,11 @@ def quote(text: str) -> None:
     st.markdown(f'<div class="rp-quote">{esc(text)}</div>', unsafe_allow_html=True)
 
 
-def section(title: str, top: str | None = None) -> None:
-    """小見出し。top で上の余白を個別に調整できる（例："-7px"）。"""
+def section(title: str, top: str | None = None, gold: bool = False) -> None:
+    """小見出し。top で上の余白を個別に調整（例："-7px"）。gold=True で縦線を金色にする。"""
     style = f' style="margin-top:{top}"' if top else ""
-    st.markdown(f'<div class="rp-h"{style}>{esc(title)}</div>', unsafe_allow_html=True)
+    cls = "rp-h gold" if gold else "rp-h"
+    st.markdown(f'<div class="{cls}"{style}>{esc(title)}</div>', unsafe_allow_html=True)
 
 
 def tiles(items: list[dict], cols: int | None = None) -> None:
@@ -224,7 +239,7 @@ def tiles(items: list[dict], cols: int | None = None) -> None:
     n = cols or len(items)
     parts = []
     for it in items:
-        cls = "rp-tile alert" if it.get("alert") else "rp-tile"
+        cls = "rp-tile alert" if it.get("alert") else ("rp-tile gold" if it.get("gold") else "rp-tile")
         style = f' style="border-top:4px solid {it["color"]}"' if it.get("color") else ""
         parts.append(f'<div class="{cls}"{style}><div class="lb">{esc(it["label"])}</div>'
                      f'<div class="v">{esc(it["value"])}</div><div class="n">{esc(it.get("note", "")) or "&nbsp;"}</div></div>')

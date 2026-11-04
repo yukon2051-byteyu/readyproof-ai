@@ -60,14 +60,15 @@ def render():
         '<div class="desc">製品の情報と自社の業務ルールを照合し、受入テスト・導入判断までつなげます。</div>'
         '</div></div>', unsafe_allow_html=True)
 
-    section("AIと人の役割分担", top="-7px")  # 上の余白を0.7cm詰める
+    section("AIと人の役割分担", top="-7px", gold=True)  # 上の余白を0.7cm詰める
     _grid([f'<div class="rp-card role"><div class="t"><span class="rp-num">{esc(m)}</span>{esc(d)}</div>'
            f'<div class="b">{esc(x)}</div></div>' for m, w, d, x in ROLES])
 
     # ---- 3分デモ：開始 → 流れ → 成果物 ----
     section("使い方は4段階：入力2つ → 出力2つ", top="4.3px")  # 上の余白：当初より0.4cm短い（0.7cm詰めて0.3cm戻す）
-    _grid([f'<div class="rp-card"><div class="t"><span class="rp-num">{i + 1}</span>{esc(t)}</div>'
-           f'<div class="m" style="margin-top:0;padding-top:0">{esc(io)}</div><div class="b">{esc(d)}</div></div>'
+    _grid([f'<div class="rp-card{" out" if io.startswith("出力") else ""}"><div class="t"><span class="rp-num">{i + 1}</span>{esc(t)}</div>'
+           f'<div class="m{"" if io.startswith("出力") else " in"}" style="margin-top:0;padding-top:0">{esc(io)}</div>'
+           f'<div class="b">{esc(d)}</div></div>'
            for i, (io, t, d) in enumerate(FLOW)])
 
     # ---- 3分デモ：その場で選んで始める ----
@@ -77,8 +78,7 @@ def render():
     if c2.button("3分デモを始める", type="primary", icon=":material/play_arrow:", width="stretch", key="open_main"):
         _open_demo(pick)
     d = next(x for x in DEMOS if x["id"] == pick)
-    st.markdown(f'<div class="rp-small">架空の会社・資料で、約3分。料金はかかりません。<br>'
-                f'{esc(d["title"])}：{esc(d["theme"])}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="rp-small">{esc(d["title"])}：{esc(d["theme"])}</div>', unsafe_allow_html=True)
 
     # ---- 自分の案件 ----
     section("自分の案件で使う")

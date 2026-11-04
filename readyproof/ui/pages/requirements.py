@@ -233,12 +233,12 @@ def intake_view(p):
         if st.toggle("回答の原文を見る（要件の「元の文章」に残ります）", key="intake_show_src"):
             st.text(transcript(tid, ans))
         c1, c2, _ = st.columns([1.4, 1, 2])
-        if c1.button("下書きとして登録", type="primary", disabled=not drafts, width="stretch"):
+        if c1.button("登録", type="primary", disabled=not drafts, width="stretch"):
             made = [rules.add_requirement(p, d, origin="質問形式", by=state.user_name()) for d in drafts]
             st.session_state.sel_req = made[0]["id"]
             st.session_state.intake_ans, st.session_state.intake_i = {}, 0
             st.session_state._goto_req_tab = "詳細・編集"
-            state.flash(f"{len(made)}件の要件を下書きとして登録しました。内容を確認して確定してください。")
+            state.flash(f"{len(made)}件の要件を登録しました。内容を確認して確定してください。")
             st.rerun()
         if c2.button("最初からやり直す", width="stretch"):
             st.session_state.intake_ans, st.session_state.intake_i = {}, 0

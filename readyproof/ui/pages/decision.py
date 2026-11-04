@@ -46,14 +46,14 @@ def decision_section(p, show_stats: bool = True):
          "alert": bool(m["contradictions"])},
         {"label": "情報不足・ベンダー確認", "value": f"{m['lack_info']}件", "note": "質問で解消する"},
     ])
-    section("実機テスト（人が実際に試した結果）")
+    section("実機テスト（人が実際に試した結果）", gold=True)
     tiles([
-        {"label": "合格率", "value": m["pass_rate"]["text"], "note": "分母：合否を判定した最新結果"},
-        {"label": "実施済み", "value": m["executed_rate"]["text"], "note": "分母：有効なテスト全件"},
-        {"label": "不合格", "value": f"{len(m['failed'])}件", "note": "依頼書で対応", "alert": bool(m["failed"])},
-        {"label": "未実施", "value": f"{len(m['not_run'])}件", "note": "実施不能は別に数える"},
+        {"label": "合格率", "value": m["pass_rate"]["text"], "gold": True, "note": "分母：合否を判定した最新結果"},
+        {"label": "実施済み", "value": m["executed_rate"]["text"], "gold": True, "note": "分母：有効なテスト全件"},
+        {"label": "不合格", "value": f"{len(m['failed'])}件", "gold": True, "note": "依頼書で対応", "alert": bool(m["failed"])},
+        {"label": "未実施", "value": f"{len(m['not_run'])}件", "gold": True, "note": "実施不能は別に数える"},
         {"label": "必須要件のうち、実機で未確認", "value": f"{len(m['must_not_verified'])}件",
-         "note": f"必須 {m['must']}件中", "alert": bool(m["must_not_verified"])},
+         "gold": True, "note": f"必須 {m['must']}件中", "alert": bool(m["must_not_verified"])},
     ])
     section("質問・依頼")
     tiles([

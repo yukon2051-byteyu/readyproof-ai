@@ -5,6 +5,11 @@ st.session_state は閲覧者ごとに分かれるため、編集内容は他の
 from __future__ import annotations
 
 import copy
+import os
+import re
+import tempfile
+import time
+import uuid
 
 import streamlit as st
 
@@ -85,3 +90,71 @@ def require_project() -> dict | None:
         if st.button("ホームへ", icon=":material/home:"):
             goto("home")
     return p
+
+
+# ---------------- 接続が切れても作業を失わない（一時保存と復元） ----------------
+_SESS_DIR = os.path.join(tempfile.gettempdir(), "readyproof_sessions")
+_SID = re.compile(r"^[0-9a-f]{32}$")
+_KEEP_SEC = 24 * 3600
+
+
+def _cleanup() -> None:
+    try:
+        now = time.time()
+        for name in os.listdir(_SESS_DIR):
+            path = os.path.join(_SESS_DIR, name)
+            if now - os.path.getmtime(path) > _KEEP_SEC:
+                os.remove(path)
+    except OSError:
+        pass
+
+
+def persist() -> None:
+    """作業中の案件を一時ファイルに保存し、識別子（ランダム）をURLに付ける。毎回の画面更新の最後に呼ぶ。"""
+    from ..export.jsonio import to_json_bytes
+
+    p = project()
+    if not p:
+        return
+    sid = st.session_state.get("_sid")
+    if not sid:
+        sid = st.session_state["_sid"] = uuid.uuid4().hex
+    try:
+        os.makedirs(_SESS_DIR, exist_ok=True)
+        with open(os.path.join(_SESS_DIR, sid + ".json"), "wb") as f:
+            f.write(to_json_bytes(p, include_unselected_notes=True))
+        if st.query_params.get("s") != sid:
+            st.query_params["s"] = sid
+        if p["project"].get("demo_id") and st.query_params.get("demo") != p["project"]["demo_id"]:
+            st.query_params["demo"] = p["project"]["demo_id"]
+    except OSError:
+        pass
+
+
+def restore() -> None:
+    """接続が切れて新しい画面になったとき、URLの識別子から作業を復元する。なければデモを開き直す。"""
+    from ..export.jsonio import LoadError, from_json_bytes
+
+    if project() is not None:
+        return
+    sid = st.query_params.get("s", "")
+    if _SID.match(sid or ""):
+        path = os.path.join(_SESS_DIR, sid + ".json")
+        if os.path.exists(path):
+            try:
+                with open(path, "rb") as f:
+                    st.session_state.project = from_json_bytes(f.read())
+                st.session_state["_sid"] = sid
+                st.session_state.setdefault("media", {})
+                flash("接続が一度切れたため、作業を自動で復元しました。", "info")
+                _cleanup()
+                return
+            except (OSError, LoadError):
+                pass
+    demo = st.query_params.get("demo", "")
+    if demo in ("demo1", "demo2", "demo3"):
+        from ..demos.builder import build
+
+        p = build(demo)
+        set_project(p, demo_initial=p)
+        flash("接続が切れたため、デモを最初の状態で開き直しました。", "info")

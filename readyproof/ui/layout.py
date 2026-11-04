@@ -40,7 +40,7 @@ def stepper(current: str) -> None:
     items = []
     for i, (key, name, io) in enumerate(STEPS):
         n, sub = c[key]
-        cls = "cur" if key == current else ("done" if n else "")
+        cls = ("cur" if key == current else ("done" if n else "")) + (" out" if io != "入力1" and io != "入力2" else "")
         items.append(f'<div class="rp-step {cls}"><span class="no">{i + 1}</span><div><div class="io">{esc(io)}</div>'
                      f'<div class="nm">{esc(name)}</div><div class="sb">{esc(sub)}</div></div></div>')
     prod = primary_product(p) or {}
