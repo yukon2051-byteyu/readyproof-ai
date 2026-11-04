@@ -76,8 +76,9 @@ def render():
     pick = c1.selectbox("見たいデモを選ぶ", list(titles.keys()), format_func=lambda i: titles[i], key="demo_pick")
     if c2.button("3分デモを始める", type="primary", icon=":material/play_arrow:", width="stretch", key="open_main"):
         _open_demo(pick)
-    st.caption("架空の会社・資料で、約3分。料金はかかりません。　" + "　".join(
-        f"・{d['title']}：{d['theme']}" for d in DEMOS if d["id"] == pick))
+    d = next(x for x in DEMOS if x["id"] == pick)
+    st.markdown(f'<div class="rp-small">架空の会社・資料で、約3分。料金はかかりません。<br>'
+                f'{esc(d["title"])}：{esc(d["theme"])}</div>', unsafe_allow_html=True)
 
     # ---- 自分の案件 ----
     section("自分の案件で使う")
