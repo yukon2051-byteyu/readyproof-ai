@@ -9,7 +9,7 @@ from ...ingest import IngestError, ingest_bytes
 from ...logic import rules
 from .. import readonly, state
 from ..components import name_required
-from ..layout import demo_note, header, next_button
+from ..layout import header, next_button
 from ..theme import badge, box, chip, esc, section
 from . import requirements
 
@@ -20,8 +20,7 @@ def render():
     if not p:
         return
     reqs = [r for r in p["requirements"] if r["status"] != "廃止"]
-    if state.is_demo():
-        demo_note()
+    if state.is_demo():  # デモは見るだけ
         req_cards(p, reqs, ro=True)
         next_button("次へ：③ 診断結果", "result")
         return

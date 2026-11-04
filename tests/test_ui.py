@@ -55,12 +55,12 @@ def test_demo_is_view_only():
     """デモは見るだけ：AIの実行・資料の追加・要件の確定や編集はできない。"""
     p = build("demo1")
     at = page("result", p, rediag=True)
-    assert "デモのため" in texts(at)
+    assert not at.exception
     assert not [b for b in at.button if "AI" in b.label]
     at = page("tests", p)
     assert not [b for b in at.button if "AI" in b.label]
     at = page("input2", p)
-    assert not at.exception and "デモのため" in texts(at)
+    assert not at.exception
     decide = [b for b in at.button if b.label in ("確定", "編集", "登録")]
     assert decide and all(b.disabled for b in decide)  # 押せない状態で表示
     assert not at.toggle

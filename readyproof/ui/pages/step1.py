@@ -11,7 +11,7 @@ from ...logic import rules
 from ...logic.recordings import build_utterances
 from ...media.subtitles import fmt_ts, parse_transcript
 from .. import state
-from ..layout import demo_note, header, next_button
+from ..layout import header, next_button
 from ..theme import box, chip, esc, section
 from . import project_page, recordings_view, sources
 
@@ -27,8 +27,7 @@ def render():
                "製品の説明資料・機能一覧・提案書・マニュアルや、営業説明の録画を入れてください。\n読めた内容と位置（ページ・スライド・発言時刻）を確認できます。")
     if not p:
         return
-    if state.is_demo():
-        demo_note()
+    if state.is_demo():  # デモは見るだけ
         items(p)
         next_button("次へ：② 自社のルール", "input2")
         return

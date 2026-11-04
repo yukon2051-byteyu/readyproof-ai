@@ -11,7 +11,7 @@ from ...export.excel import questionnaire_workbook
 from ...logic import rules
 from .. import readonly, state
 from ..components import evidence_view
-from ..layout import demo_note, header, next_button
+from ..layout import header, next_button
 from ..theme import CATEGORY_STYLE, badge, box, category_chip, chip, esc, review_chip, section, tiles
 from . import diagnosis, questions
 
@@ -40,9 +40,7 @@ def render():
             state.goto("input2")
         return
     summary(p, reqs)
-    if state.is_demo():
-        demo_note()
-    else:
+    if not state.is_demo():  # デモは見るだけ（AIは実行しない）
         ai_box(p, reqs)
     focus = st.session_state.get("focus_req")
     if focus not in [r["id"] for r in reqs]:  # 何も開いていなければ1件目を開く（「閉じる」は使わない）
