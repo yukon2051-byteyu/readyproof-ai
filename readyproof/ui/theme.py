@@ -161,6 +161,15 @@ mark.rp-mark {{ background: #BFE9FC; color: inherit; padding: 0 2px; border-radi
 .rp-step.judge.done .no, .rp-step.judge.cur .no {{ background: {JUDGE}; color: #fff; }}
 .rp-step.judge .io {{ color: {JUDGE_TEXT}; }}
 .rp-step.judge.cur .io {{ color: #7FD3AE; }}
+.rp-cond3 {{ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 4px 0 12px; }}
+.rp-cond3 > div {{ padding: 0 18px; }}
+.rp-cond3 > div:first-child {{ padding-left: 0; }}
+.rp-cond3 > div + div {{ border-left: 1px solid {BORDER}; }}
+.rp-cond3 .h {{ font-weight: 700; color: {NAVY}; margin-bottom: 6px; }}
+.rp-cond3 ul {{ margin: 0; padding-left: 1.1rem; }}
+.rp-cond3 li {{ margin-bottom: 4px; line-height: 1.6; }}
+@media (max-width: 800px) {{ .rp-cond3 {{ grid-template-columns: 1fr; }} .rp-cond3 > div {{ padding: 8px 0; }}
+  .rp-cond3 > div + div {{ border-left: none; border-top: 1px solid {BORDER}; }} }}
 /* 画面移動時に最上部へ戻すための見えない部品（高さ0）が、すき間を作らないようにする */
 div[data-testid="stElementContainer"]:has(> iframe[data-testid="stIFrame"]) {{ position: absolute; height: 0; margin: 0; overflow: hidden; }}
 .rp-tile.gold {{ border-top: 4px solid {GOLD}; }}

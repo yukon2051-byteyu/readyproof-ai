@@ -142,7 +142,8 @@ def apply(p: dict, demo_id: str) -> None:
         ok = cat in ("そのまま対応できる見込み", "標準設定で対応できる見込み")
         dg = rules.add_diagnosis(p, {
             "req_id": rid, "product_id": old.get("product_id"), "category": cat, "reason": comment,
-            "met_conditions": old["met_conditions"] + (old["remaining_conditions"] if ok else []),
+            "met_conditions": old["met_conditions"] + ([f"ベンダー回答で確認済み：{x}" for x in old["remaining_conditions"]]
+                                                       if ok else []),
             "remaining_conditions": [] if ok else old["remaining_conditions"],
             "test_conditions": old.get("test_conditions", []),
             "evidence": ev + old["evidence"], "plan_conditions": old.get("plan_conditions", ""),
