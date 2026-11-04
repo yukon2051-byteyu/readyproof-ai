@@ -10,7 +10,7 @@ from dataclasses import dataclass, field, asdict
 
 APP_NAME_EN = "ReadyProof AI"
 APP_NAME_JA = "AI受入テスト・導入確認支援システム"
-TAGLINE = "「うちの会社で使える？」を、資料の診断から改修依頼・テストまで支援。"
+TAGLINE = "「うちの会社で使える？」に答えるAI"
 DESCRIPTION = (
     "ベンダーの製品資料や営業説明の録画と、自社の業務ルール・作業手順を照合し、"
     "そのまま使える見込み、設定が必要な部分、追加対応が必要な部分、確認が必要な点を根拠付きで整理します。"

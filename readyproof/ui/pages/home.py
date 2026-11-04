@@ -72,7 +72,7 @@ def render():
     st.markdown(
         f'<div class="rp-hero">{MOTIF}<div class="inner"><div class="eyebrow">{esc(APP_NAME_JA)}</div>'
         '<div class="name">ReadyProof <span>AI</span></div>'
-        '<div class="tag"><em>「うちの会社で使える？」</em>を、<br>資料の診断から改修依頼・テストまで支援。</div>'
+        '<div class="tag"><em>「うちの会社で使える？」</em>に答える<em>AI</em></div>'
         '<div class="desc">製品の情報と自社の業務ルールを照合し、導入判断・受入テストまでつなげます。</div>'
         '</div></div>', unsafe_allow_html=True)
 
