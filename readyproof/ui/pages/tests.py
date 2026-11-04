@@ -12,8 +12,9 @@ from .. import state
 from ..components import ai_panel, context_bar, name_required, page_title, run_ai
 from ..theme import RESULT_TONE, chip, esc, section
 
-FIELDS = [("purpose", "目的"), ("role", "操作する役割"), ("preconditions", "事前条件"), ("inputs", "入力"),
-          ("steps", "操作手順（画面・ボタンが不明なら「要確認」）"), ("expected", "期待結果"), ("expected_basis", "期待結果の根拠"),
+FIELDS = [("purpose", "目的"), ("role", "操作する役割"), ("preconditions", "事前条件"), ("test_data", "テストデータ"),
+          ("inputs", "入力"), ("steps", "操作手順（番号付き。画面名は推測で書かない）"), ("expected", "期待結果"),
+          ("pass_criteria", "合否判定基準"), ("expected_basis", "期待結果の根拠"),
           ("importance_reason", "重要度の理由"), ("open_issues", "未確定事項")]
 
 

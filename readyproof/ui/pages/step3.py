@@ -49,7 +49,7 @@ def render():
         card(p, r, focus == r["id"])
     st.download_button("ベンダーへの質問書（Excel）をダウンロード", questionnaire_workbook(p),
                        file_name=f"{p['project']['id']}_質問書.xlsx", mime=XLSX, icon=":material/download:")
-    next_button("次へ：④ 受入テスト書", "tests")
+    next_button("次へ：④ 受入テスト", "tests")
 
 
 def summary(p, reqs):

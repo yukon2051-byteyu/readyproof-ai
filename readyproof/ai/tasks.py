@@ -232,9 +232,10 @@ def build_test_input(project: dict, req_id: str, request_id: str | None) -> str:
     req = find(project, "requirements", req_id)
     dg = rules.current_diagnosis(project, req_id)
     cr = find(project, "requests", request_id) if request_id else None
-    return ("次の要件について、受入テストの下書きを作成してください。通常操作・例外・境界値・権限・承認/差し戻し・"
-            "設定/改修箇所・関連する既存動作の再確認から必要な観点を選んでください。画面名・ボタン名・設定方法が"
-            "分からない場合は手順に『要確認』と書き、存在しない画面を作らないでください。\n\n"
+    return ("次の要件について、受入テスト仕様（そのまま実施できる完成度）を作成してください。"
+            "通常操作・例外・境界値・権限・承認/差し戻し・設定/改修箇所・関連する既存動作の再確認から、要件に根拠のある観点をすべて選び、"
+            "各テストに事前条件・具体的なテストデータ・番号付き手順・確認できる期待結果・合否判定基準を書いてください。"
+            "画面名・ボタン名・設定方法が資料にない場合は、業務の操作として書き、存在しない画面を作らないでください。" + chr(10) * 2
             + data_block("要件", json.dumps({k: req.get(k) for k in ("id", "version", "business", "workflow", "role",
                                                                       "rules", "exceptions", "inputs", "outputs")},
                                             ensure_ascii=False))

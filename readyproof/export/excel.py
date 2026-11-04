@@ -289,36 +289,111 @@ def _save(wb) -> bytes:
     return buf.getvalue()
 
 
+VIEWPOINTS_MAIN = ["通常操作", "境界値", "例外・エラー", "権限"]
+
+
 def acceptance_test_workbook(project: dict) -> bytes:
-    """受入テスト書：要件ごとのテスト項目と、実施結果の記入欄。アプリがなくても実施記録に使える形。"""
-    wb = Workbook()
-    ws = wb.active
-    ws.title = "受入テスト書"
+    """受入テスト仕様書：表紙・概要・テスト項目・要件との対応表・実施記録。アプリがなくても使える形。"""
+    from ..logic.rules import current_diagnosis
+
+    prod = primary_product(project) or {}
     tests = [t for t in project["tests"] if t["status"] != "廃止"]
+    reqs = [r for r in project["requirements"] if r["status"] != "廃止"]
     draft = sum(1 for t in tests if t["status"] != "確定")
-    r = _header_block(ws, "受入テスト書", project,
-                      f"確定 {len(tests) - draft}件・下書き {draft}件（下書きは期待結果・手順が未確定です）")
+    wb = Workbook()
+
+    # 1. 表紙
+    ws = wb.active
+    ws.title = "表紙"
+    ws["A1"] = "受入テスト仕様書"
+    ws["A1"].font = Font(size=20, bold=True)
+    rows = [["案件", f"{project['project']['id']} {project['project']['name']}"],
+            ["対象製品", f"{prod.get('name', '未登録')}（{prod.get('vendor', '')}）"],
+            ["版・プラン", f"版：{prod.get('edition') or '未記入'}／プラン：{prod.get('plan') or '未記入'}"],
+            ["対象業務", project["project"].get("target_business", "")],
+            ["状態", f"テスト {len(tests)}件（確定 {len(tests) - draft}件・下書き {draft}件）"],
+            ["出力日時", now_iso()], ["作成者（記入）", ""], ["確認者（記入）", ""], ["承認者（記入）", ""],
+            ["作成", "ReadyProof AI（下書きを人が確認・確定したもの）"]]
+    if project["project"].get("demo_id"):
+        rows.append(["注意", "架空のデモデータです"])
+    _table(ws, 3, ["項目", "内容"], rows, [20, 90])
+    for row in range(10, 13):
+        ws.cell(row=row, column=2).fill = INPUT_FILL
+
+    # 2. 概要
+    ws = wb.create_sheet("概要")
+    must = sum(1 for r in reqs if r["priority"] == "必須")
+    over = [
+        ["目的", "候補製品が自社の要件（業務ルール・作業手順・必須条件）を満たすことを、実際の製品で人が確認する。"
+                 "資料や営業説明による「見込み」は、この仕様書の合格の代わりにならない。"],
+        ["対象範囲", f"自社の要件 {len(reqs)}件（うち必須 {must}件）。要件ごとのテストは「要件との対応表」を参照。"],
+        ["対象外", "製品の内部設計・性能・セキュリティ診断など、自社の要件に含まれないもの。"],
+        ["テスト環境", f"{prod.get('name', '対象製品')}（版：{prod.get('edition') or '未記入'}／プラン：{prod.get('plan') or '未記入'}）の検証環境。"
+                       "本番データは使わず、テスト用アカウントとテストデータを用意する。"],
+        ["実施の手順", "① 事前条件を整える ② テストデータを使って手順どおりに操作する ③ 期待結果と比べ、黄色の欄に結果を記入する。"],
+        ["合否判定基準", "期待結果のすべてを満たした場合のみ合格。1点でも異なれば不合格とし、実際の結果と証跡（画面の記録）を残す。"
+                         "試せなかった場合は「実施不能」とし、理由を書く（合否に数えない）。"],
+        ["不合格のとき", "不具合か、合意済みの仕様か、追加要望かを確認してから、ベンダーへの依頼（改修・設定変更・調査）にする。"
+                         "対応後は新しい実施として再テストし、過去の結果は書き換えない。"],
+        ["下書きの扱い", "状態が「下書き」のテストは、手順・期待結果を人が確認・確定してから実施する。"],
+        ["テストの観点", "通常操作／境界値（金額の境目・上限件数・保存期間）／例外・エラー／権限（禁止事項・操作できる人）"],
+    ]
+    _table(ws, 1, ["項目", "内容"], over, [18, 110])
+
+    # 3. テスト項目
+    ws = wb.create_sheet("テスト項目")
     rows = []
-    for t in sorted(tests, key=lambda x: (x["req_ids"][:1], x["id"])):
-        reqs = [find(project, "requirements", rid) for rid in t["req_ids"]]
+    req_order = {r["id"]: i for i, r in enumerate(project["requirements"])}
+    for no, t in enumerate(sorted(tests, key=lambda x: (min((req_order.get(r, 999) for r in x["req_ids"]), default=999), x["id"])),
+                           start=1):
+        rq = [find(project, "requirements", rid) for rid in t["req_ids"]]
         lr = latest_run(project, t["id"])
+        crs = [c["id"] for c in project["requests"] if t["id"] in c.get("test_ids", [])]
         rows.append([
-            t["id"], t["version"], "確定" if t["status"] == "確定" else "下書き（未確定）",
-            "\n".join(f"{x['id']} {x['business']}：{x['rules']}" for x in reqs if x), t["viewpoint"], t["purpose"],
-            t["preconditions"], t["inputs"], t["steps"], t["expected"], t["expected_basis"], t["importance"],
+            no, t["id"], t["version"], "確定" if t["status"] == "確定" else "下書き（未確定）",
+            chr(10).join(f"{x['id']} 第{x['version']}版" for x in rq if x), chr(10).join(x["rules"] or x["workflow"] for x in rq if x),
+            t.get("viewpoint", ""), t.get("purpose", ""), t.get("preconditions", ""),
+            t.get("test_data", "") or t.get("inputs", ""), t.get("steps", ""), t.get("expected", ""),
+            t.get("pass_criteria", "") or "期待結果のすべてを満たした場合のみ合格", t.get("expected_basis", ""),
+            t.get("importance", ""), t.get("open_issues", ""),
             (lr or {}).get("executed_at", ""), (lr or {}).get("tester", ""),
-            ((lr["result"] if lr["status"] == "完了" else lr["status"]) if lr else ""), (lr or {}).get("actual", ""), "",
-        ])
-    _table(ws, r, ["テストID", "版", "状態", "要件", "観点", "目的", "事前条件", "入力", "手順", "期待結果", "期待結果の根拠",
-                   "重要度", "実施日", "実施者", "結果（合格／不合格／実施不能）", "実際の結果", "備考"],
-           rows, [8, 5, 12, 36, 10, 22, 22, 16, 34, 34, 18, 6, 12, 10, 14, 30, 16])
-    for row in range(r + 1, r + 1 + len(rows)):
-        for col in (13, 14, 15, 16, 17):
+            ((lr["result"] if lr["status"] == "完了" else lr["status"]) if lr else ""), (lr or {}).get("actual", ""),
+            (lr or {}).get("evidence_memo", ""), "、".join(crs)])
+    r0 = _header_block(ws, "受入テスト仕様書：テスト項目", project, f"確定 {len(tests) - draft}件・下書き {draft}件")
+    _table(ws, r0, ["No", "テストID", "版", "状態", "要件ID", "要件（ルール）", "観点", "目的", "事前条件", "テストデータ", "手順",
+                    "期待結果", "合否判定基準", "根拠", "重要度", "未確定事項", "実施日", "実施者", "結果（合格／不合格／実施不能）",
+                    "実際の結果", "証跡", "不具合・依頼ID"],
+           rows, [5, 8, 5, 11, 12, 34, 10, 24, 30, 24, 36, 36, 28, 30, 6, 26, 12, 10, 14, 30, 16, 12])
+    for row in range(r0 + 1, r0 + 1 + len(rows)):
+        for col in range(17, 23):
             ws.cell(row=row, column=col).fill = INPUT_FILL
-    ws2 = wb.create_sheet("説明")
-    notes = [["この書類について", "ReadyProof AI で作成した受入テスト書です。実際の製品で人が試し、黄色の欄に結果を記入します。"],
-             ["合否の付け方", "期待結果どおりなら合格、違えば不合格（実際の結果を記入）。試せなかった場合は実施不能（合否に数えない）。"],
-             ["下書きの扱い", "状態が「下書き」のテストは、手順・期待結果を確定してから実施してください。"],
-             ["根拠", "期待結果の根拠は、自社の要件（版つき）と診断結果です。資料・営業説明上の見込みは、合格の代わりになりません。"]]
-    _table(ws2, 1, ["項目", "内容"], notes, [18, 100])
+
+    # 4. 要件との対応表（トレーサビリティ）
+    ws = wb.create_sheet("要件との対応表")
+    rows = []
+    for rq in reqs:
+        rts = [t for t in tests if rq["id"] in t["req_ids"]]
+        vps = {t.get("viewpoint") for t in rts}
+        res = [latest_run(project, t["id"]) for t in rts]
+        ok = sum(1 for x in res if x and x["status"] == "完了" and x["result"] == "合格")
+        ng = sum(1 for x in res if x and x["status"] == "完了" and x["result"] == "不合格")
+        dg = current_diagnosis(project, rq["id"])
+        missing = [v for v in VIEWPOINTS_MAIN if v not in vps]
+        rows.append([rq["id"], rq["version"], rq["priority"], rq["status"], rq["business"], rq["rules"] or rq["workflow"],
+                     dg["category"] if dg else "診断なし", len(rts), "、".join(t["id"] for t in rts) or "テストなし",
+                     "、".join(sorted(v for v in vps if v)), "、".join(missing) if rts else "すべて",
+                     f"合格 {ok}／不合格 {ng}／未実施・実施不能 {len(rts) - ok - ng}"])
+    r0 = _header_block(ws, "受入テスト仕様書：要件との対応表", project,
+                       "「足りない観点」は、要件の内容から必要かどうかを人が判断する（すべての観点が必要とは限らない）")
+    _table(ws, r0, ["要件ID", "版", "重要度", "状態", "業務", "ルール", "診断", "テスト数", "テストID", "観点", "足りない観点",
+                    "結果の内訳"], rows, [9, 5, 7, 7, 16, 40, 18, 7, 22, 22, 22, 26])
+
+    # 5. 実施記録
+    ws = wb.create_sheet("実施記録")
+    rows = [[x["id"], x["test_id"], x["test_version"], x["tester"], x["executed_at"], x["product_version"], x["plan"],
+             x["environment"], x["status"], x["result"], x["actual"], x["evidence_memo"], x["defect"],
+             "再テスト" if x["is_retest"] else "初回"] for x in project["runs"]]
+    r0 = _header_block(ws, "受入テスト仕様書：実施記録（過去の結果は書き換えない）", project)
+    _table(ws, r0, ["実施ID", "テストID", "テスト版", "実施者（自己申告）", "日時", "製品版", "プラン", "環境", "状態", "合否",
+                    "実際の結果", "証跡", "不具合", "区分"], rows, [8, 8, 6, 12, 18, 10, 10, 12, 9, 7, 32, 24, 24, 8])
     return _save(wb)

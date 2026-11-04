@@ -125,7 +125,7 @@ div[class*="st-key-rpbox_"] {{ padding: 14px 18px; }}
 .rp-ctxrow.hit {{ background: #F3FAFF; border-left: 4px solid {ACCENT}; color: #1F2937; }}
 mark.rp-mark {{ background: #BFE9FC; color: inherit; padding: 0 2px; border-radius: 3px; }}
 
-/* 4段階の進み具合（①製品の資料 → ②自社のルール → ③診断結果 → ④受入テスト書） */
+/* 4段階の進み具合（①製品の資料 → ②自社のルール → ③診断結果 → ④受入テスト） */
 .rp-stepper {{ display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 4px 0 14px; }}
 .rp-step {{ display: flex; gap: 10px; align-items: center; background: #fff; border: 1px solid {BORDER}; border-radius: 10px;
   padding: 9px 12px; box-shadow: 0 1px 2px rgba(20, 38, 63, .06); }}

@@ -1,4 +1,4 @@
-"""④ 受入テスト書（出力2）：テストを作って確定し、人が実機で試した結果を記録して、受入テスト書を出力する。"""
+"""④ 受入テスト（出力2）：テストを作って確定し、人が実機で試した結果を記録して、受入テストを出力する。"""
 from __future__ import annotations
 
 import streamlit as st
@@ -17,8 +17,8 @@ XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
 
 def render():
-    p = header("tests", "受入テスト書",
-               "自社の要件を満たすかを、実際の製品で人が試すためのテストです。テストを確定し、試した結果を記録すると、受入テスト書（Excel）に反映されます。")
+    p = header("tests", "受入テスト",
+               "自社の要件を満たすかを、実際の製品で人が試すためのテストです。テストを確定し、試した結果を記録すると、受入テスト仕様書（Excel）に反映されます。")
     if not p:
         return
     ts = [t for t in p["tests"] if t["status"] != "廃止"]
@@ -31,17 +31,17 @@ def render():
         {"label": "試せなかった", "value": f"{len(m['blocked'])}件", "note": "合否には数えない", "color": "#B45309"},
     ])
     c1, c2, c3 = st.columns([1.3, 1.3, 1])
-    c1.download_button("受入テスト書（Excel）をダウンロード", acceptance_test_workbook(p), type="primary",
-                       file_name=f"{p['project']['id']}_受入テスト書.xlsx", mime=XLSX, icon=":material/download:",
+    c1.download_button("受入テスト仕様書（Excel）をダウンロード", acceptance_test_workbook(p), type="primary",
+                       file_name=f"{p['project']['id']}_受入テスト仕様書.xlsx", mime=XLSX, icon=":material/download:",
                        width="stretch")
-    if c2.button("確定した要件からテストの下書きを作る（AIなし）", icon=":material/playlist_add:", width="stretch"):
+    if c2.button("確定した要件からテスト仕様を作る（AIなし）", icon=":material/playlist_add:", width="stretch"):
         made = draft_tests(p)
-        state.flash(f"{len(made)}件のテストの下書きを作りました。手順の「要確認」を製品で確かめてから確定してください。"
+        state.flash(f"{len(made)}件のテスト仕様を作りました（下書き）。画面の場所を製品で確かめ、期待結果を確認してから確定してください。"
                     if made else "新しく作るテストはありません（確定した要件には、すでにテストがあります）。")
         st.rerun()
     c3.download_button("導入確認レポート", report_workbook(p), file_name=f"{p['project']['id']}_導入確認レポート.xlsx",
                        mime=XLSX, icon=":material/description:", width="stretch")
-    if not st.session_state.get("tour") and st.toggle("AIでテストの下書きを作る", key="show_ai_tests"):
+    if not st.session_state.get("tour") and st.toggle("AIでテスト仕様を作る", key="show_ai_tests"):
         with box():
             reqs = [r for r in p["requirements"] if r["status"] == "確定"]
             if reqs:

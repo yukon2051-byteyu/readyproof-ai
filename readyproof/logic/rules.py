@@ -446,8 +446,8 @@ def record_vendor_response(project: dict, r: dict, data: dict, by: str) -> None:
 
 # ================= テスト・実施 =================
 TEST_FIELDS = ["req_ids", "evidence", "request_ids", "acceptance_ref", "purpose", "viewpoint", "role",
-               "preconditions", "inputs", "steps", "expected", "expected_basis", "importance",
-               "importance_reason", "open_issues", "expected_confirmed", "title"]
+               "preconditions", "inputs", "test_data", "steps", "expected", "pass_criteria", "expected_basis",
+               "importance", "importance_reason", "open_issues", "expected_confirmed", "title"]
 
 
 def add_test(project: dict, data: dict, origin: str = "手動") -> dict:

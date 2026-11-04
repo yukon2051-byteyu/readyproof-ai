@@ -68,7 +68,7 @@ def test_no_api_key_explains_and_manual_still_works():
 
 def test_pass_without_confirmed_expected_blocked_in_ui():
     p = build("demo3")  # T-002 は期待結果が未確定の下書き
-    at = page("tests", p, sel_test="T-002", user_name="テスト実施者")  # ④ 受入テスト書でT-002を開いた状態
+    at = page("tests", p, sel_test="T-002", user_name="テスト実施者")  # ④ 受入テストでT-002を開いた状態
     at.selectbox[[s.label for s in at.selectbox].index("合否")].set_value("合格")
     at.text_area[[t.label for t in at.text_area].index("実際の結果（何が起きたか）")].set_value("ログインできなかった")
     at.button[[b.label for b in at.button].index("記録する")].click().run()

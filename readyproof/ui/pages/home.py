@@ -36,11 +36,11 @@ MOTIF = (
     '</svg>')
 
 FLOW = [("入力1", "製品の資料", "提案書・機能一覧・マニュアル・営業説明など"),
-        ("入力2", "自社のルール", "質問に答え、守るルール・例外・条件をまとめる"),
+        ("入力2", "自社のルール", "質問に答え、ルール・例外・条件をまとめる"),
         ("出力1", "診断結果", "要件ごとに、そのまま使えるかを根拠付きで判定"),
         ("出力2", "受入テスト", "実機で確認すべき項目をテスト仕様書に")]
 ROLES = [
-    ("AI", "AI", "下書きを作る", "資料と自社のルールの照合・診断、ベンダーへの質問、依頼書とテストのたたき台"),
+    ("AI", "AI", "下書きを作る", "資料と自社のルールの照合・診断、ベンダーへの質問、依頼書とテスト仕様書"),
     ("人", "人", "確定・判断する", "AIの下書きの確認と確定、実機でのテスト、導入するかの判断"),
 ]
 DEMO_POINTS = {
@@ -52,7 +52,7 @@ DEMO_POINTS = {
 
 @st.cache_data(show_spinner=False)
 def sample_report() -> bytes:
-    """成果物の見本（デモ1の受入テスト書）。架空データ・料金なし。"""
+    """成果物の見本（デモ1の受入テスト仕様書）。架空データ・料金なし。"""
     return acceptance_test_workbook(build("demo1"))
 
 
@@ -84,7 +84,7 @@ def render():
     if c1.button("3分デモを始める（経費精算サービスの導入）", type="primary", icon=":material/play_arrow:",
                  width="stretch", key="open_main"):
         _open_demo("demo1")
-    c2.download_button("見本：受入テスト書（Excel）", sample_report(), file_name="ReadyProof_サンプル_受入テスト書.xlsx",
+    c2.download_button("見本：受入テスト仕様書（Excel）", sample_report(), file_name="ReadyProof_サンプル_受入テスト仕様書.xlsx",
                        mime=XLSX, icon=":material/download:", width="stretch")
     st.caption("架空の会社・資料で、画面の案内に沿って約3分。料金はかかりません。")
 

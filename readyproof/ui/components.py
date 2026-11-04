@@ -71,7 +71,7 @@ def tour_bar(current: str) -> None:
     with st.container(key="tour"):
         if i >= len(steps):
             st.markdown(badge("デモ完了", "green", "flag")
-                        + "製品の資料と自社のルールを入力すると、診断結果と受入テスト書ができる流れを一通り見ました。")
+                        + "製品の資料と自社のルールを入力すると、診断結果と受入テスト仕様書ができる流れを一通り見ました。")
             c1, c2, _ = st.columns([1.6, 1, 2.4])
             if c1.button("ホームで別のデモを選ぶ", key="tour_home", width="stretch"):
                 st.session_state.pop("tour", None)

@@ -73,9 +73,11 @@ REQUEST_SCHEMA = _obj({
 
 TEST_SCHEMA = _obj({"tests": _arr(_obj({
     "title": _s(), "purpose": _s(), "viewpoint": {"type": "string", "enum": TEST_VIEWPOINTS},
-    "role": _s("操作する役割"), "preconditions": _s(), "inputs": _s(),
-    "steps": _s("操作手順。画面名・ボタン名が不明なら『要確認』"),
-    "expected": _s("期待結果"), "expected_basis": _s("期待結果の根拠（要件・受入条件）"),
+    "role": _s("操作する役割"), "preconditions": _s("検証環境・テスト用アカウント・必要な設定"), "inputs": _s(),
+    "test_data": _s("具体的なテストデータ（金額・件数・日付などの値）"),
+    "steps": _s("番号付きの操作手順。画面名・ボタン名が資料にない場合は業務の操作として書き、推測しない"),
+    "expected": _s("期待結果（確認できる具体的な状態）"), "pass_criteria": _s("合否判定基準"),
+    "expected_basis": _s("期待結果の根拠（要件・受入条件）"),
     "importance": {"type": "string", "enum": TEST_IMPORTANCE}, "importance_reason": _s(),
     "open_issues": _s("未確定事項"),
 }))})
