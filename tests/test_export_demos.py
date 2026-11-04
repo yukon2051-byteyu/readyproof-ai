@@ -5,7 +5,7 @@ import json
 import openpyxl
 import pytest
 
-from readyproof.demos.builder import DEMOS, EXPECTED, build
+from readyproof.demos.builder import DEMOS, EXPECTED, build_scenario as build
 from readyproof.export.excel import questionnaire_workbook, report_workbook, request_workbook, safe
 from readyproof.export.jsonio import LoadError, from_json_bytes, to_json_bytes
 from readyproof.logic import metrics, rules
@@ -118,3 +118,35 @@ def test_excel_unknown_cost_shown_as_unanswered(demos):
     wb = openpyxl.load_workbook(io.BytesIO(report_workbook(demos["demo2"])))
     text = "\n".join(str(c.value) for row in wb["対応と依頼"].iter_rows() for c in row if c.value)
     assert "未回答" in text and "0 円" not in text
+
+
+def test_screen_demos_use_saved_real_ai_outputs():
+    """画面のデモ：固定の入力 ＋ 事前に本物のAIで作った出力。表示時に有料APIは呼ばない（conftestで禁止済み）。"""
+    from readyproof.demos.ai_outputs import ORIGIN
+    from readyproof.demos.builder import build as build_screen
+    from readyproof.logic.rules import current_diagnosis
+
+    for d in DEMOS:
+        p = build_screen(d["id"])
+        confirmed = [r for r in p["requirements"] if r["status"] == "確定"]
+        assert confirmed and all(current_diagnosis(p, r["id"]) for r in confirmed)
+        assert all(x["origin"] == ORIGIN for x in p["diagnoses"] + p["tests"])
+        assert p["tests"] and not p["runs"]  # テスト結果は見る人が記録する
+        assert any(t["status"] == "確定" for t in p["tests"])
+        assert all(t["status"] == "下書き" for t in p["tests"] if "要確認" in t["steps"] + t["expected"])
+        assert p["project"]["demo_ai"]["model"]
+        for dg in p["diagnoses"]:  # 参照キー（E3 など）が文中に残らない
+            assert not __import__("re").search(r"(?<![A-Za-z0-9])E[0-9]+(?![0-9])", dg["reason"])
+
+
+def test_saved_ai_output_rejects_changed_inputs():
+    """入力が変わったら、古いAIの出力を貼らない。"""
+    import pytest
+
+    from readyproof.demos.ai_outputs import StaleDemoOutput, apply_saved
+    from readyproof.demos.builder import build_inputs
+
+    p = build_inputs("demo1")
+    p["requirements"][0]["rules"] += "（変更）"
+    with pytest.raises(StaleDemoOutput):
+        apply_saved(p, "demo1")

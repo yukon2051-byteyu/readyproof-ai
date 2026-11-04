@@ -1,5 +1,5 @@
 """質問形式の要件入力（AIなし）と、根拠の原文表示。"""
-from readyproof.demos.builder import build
+from readyproof.demos.builder import build_scenario as build
 from readyproof.intake import (TEMPLATES, UNKNOWN, build_requirements, suggest_template, transcript,
                                visible_questions)
 from readyproof.logic import rules

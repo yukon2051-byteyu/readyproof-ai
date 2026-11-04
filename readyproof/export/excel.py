@@ -277,7 +277,7 @@ def request_workbook(project: dict, request_id: str) -> bytes:
         ["費用・工期", "未回答（不明な費用・工期は記載していません）" if v["cost_amount"] is None and v["effort"] is None
          else f"費用：{v['cost_amount'] if v['cost_amount'] is not None else '未回答'} {v['cost_currency']}／"
               f"工数：{v['effort'] if v['effort'] is not None else '未回答'} {v['effort_unit']}"],
-        ["作成", c["origin"] + ("（AIの下書きを人が確認・編集）" if c["origin"] == "AI生成" else "")],
+        ["作成", c["origin"] + ("（AIの下書きを人が確認・編集）" if c["origin"].startswith("AI生成") else "")],
     ]
     _table(ws, r, ["項目", "内容"], rows, [28, 100])
     return _save(wb)

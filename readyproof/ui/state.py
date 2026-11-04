@@ -86,9 +86,10 @@ def show_flash() -> None:
 def require_project() -> dict | None:
     p = project()
     if p is None:
-        st.info("案件が開かれていません。ホームでデモを選ぶか、新しい案件を作成・保存案件を読み込んでください。")
-        if st.button("ホームへ", icon=":material/home:"):
+        # 案件がないまま途中の画面のリンクを開いたときは、トップページへ自動で移る
+        if "home" in PAGES:
             goto("home")
+        st.info("案件が開かれていません。ホームでデモを選ぶか、新しい案件を作成してください。")
     return p
 
 

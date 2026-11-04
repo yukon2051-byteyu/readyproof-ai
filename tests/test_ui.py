@@ -5,7 +5,7 @@ import pytest
 from streamlit.testing.v1 import AppTest
 
 from readyproof.config import TAGLINE
-from readyproof.demos.builder import build
+from readyproof.demos.builder import build_scenario as build
 
 HARNESS = os.path.join(os.path.dirname(__file__), "ui_harness.py")
 APP = os.path.join(os.path.dirname(os.path.dirname(__file__)), "app.py")

@@ -1,7 +1,8 @@
 """3件の無料デモ（架空の会社・製品・人物・資料・録画）。
 
 - 資料は実際の読込部品（ingest）でサンプルファイルを読み込む
-- AI の結果は「準備済みのデモ結果」（有料APIは呼ばない）
+- 画面のデモ（build）：AI の結果は、事前に本物のAIで作って保存したもの（画面表示時に有料APIは呼ばない）
+- 筋書き版（build_scenario）：手で作った結果。業務ルールの自動テスト用
 - 状態の変更は業務ルール層（rules）を通すので、本番と同じ検証がかかる
 """
 from __future__ import annotations
@@ -128,7 +129,7 @@ def _run(project, t, result, actual, tester="デモ実施者（架空）", statu
 
 
 # ======================================================================
-def build_demo1() -> dict:
+def build_demo1(inputs_only: bool = False) -> dict:
     p = new_project("【デモ1】経費精算サービスの導入（架空）", demo_id="demo1")
     p["project"].update({"target_business": "経費の申請・承認", "purpose": "紙とExcelの経費精算をクラウドに移行し、承認ルールを統制する",
                          "department": "経理部（架空）", "constraints": "2027年4月稼働。既存の経費精算規程は変更しない前提"})
@@ -155,6 +156,8 @@ def build_demo1() -> dict:
               original_text="上司が不在の場合の代理承認の条件は、経理部で検討中であり未確定とする。")
     for r in (r1, r2):
         rules.confirm_requirement(p, r, "経理部 佐藤（架空）")
+    if inputs_only:  # 固定の入力（資料・録画・自社の要件）だけ
+        return p
 
     d1 = rules.add_diagnosis(p, {
         "req_id": r1["id"], "product_id": "PR-001", "category": "標準設定で対応できる見込み",
@@ -252,7 +255,7 @@ def build_demo1() -> dict:
 
 
 # ======================================================================
-def build_demo2() -> dict:
+def build_demo2(inputs_only: bool = False) -> dict:
     p = new_project("【デモ2】生産・在庫管理システムの導入（架空）", demo_id="demo2")
     p["project"].update({"target_business": "製造実績・ロットトレーサビリティ", "purpose": "品質問題発生時に、製品ロットから原材料ロットを即時に追跡する",
                          "department": "製造部・品質保証部（架空）", "constraints": "一部工程（屋外の倉庫棟）は通信が不安定"})
@@ -282,6 +285,8 @@ def build_demo2() -> dict:
             original_text="誤登録を訂正でき、履歴が残ること。")
     for r in (r1, r2, r3, r4):
         rules.confirm_requirement(p, r, "品質保証部 山本（架空）")
+    if inputs_only:  # 固定の入力（資料・録画・自社の要件）だけ
+        return p
 
     d1 = rules.add_diagnosis(p, {
         "req_id": r1["id"], "product_id": "PR-001", "category": "そのまま対応できる見込み",
@@ -410,7 +415,7 @@ def build_demo2() -> dict:
 
 
 # ======================================================================
-def build_demo3() -> dict:
+def build_demo3(inputs_only: bool = False) -> dict:
     p = new_project("【デモ3】社内アカウント管理サービスの導入（架空）", demo_id="demo3")
     p["project"].update({"target_business": "退職者のアカウント停止・管理者の操作監査", "purpose": "退職日に確実にアカウントを停止し、操作履歴を監査に使う",
                          "department": "情報システム部（架空）", "constraints": "予算上、現在検討中の標準（スタンダード）プランで利用したい"})
@@ -450,6 +455,8 @@ def build_demo3() -> dict:
               original_text="現在検討中の標準プランで利用したい。")
     for r in (r1, r2, r3):
         rules.confirm_requirement(p, r, "情報システム部 田中（架空）")
+    if inputs_only:  # 固定の入力（資料・録画・自社の要件）だけ
+        return p
 
     d1 = rules.add_diagnosis(p, {
         "req_id": r1["id"], "product_id": "PR-001", "category": "根拠間に矛盾あり",
@@ -505,8 +512,23 @@ def build_demo3() -> dict:
 BUILDERS = {"demo1": build_demo1, "demo2": build_demo2, "demo3": build_demo3}
 
 
-def build(demo_id: str) -> dict:
+def build_scenario(demo_id: str) -> dict:
+    """手で作った筋書き（質問・回答・不合格→再テストなど）を含む版。業務ルールの自動テスト用。"""
     return BUILDERS[demo_id]()
+
+
+def build_inputs(demo_id: str) -> dict:
+    """デモの固定の入力だけ（資料・録画・自社の要件）。"""
+    return BUILDERS[demo_id](inputs_only=True)
+
+
+def build(demo_id: str) -> dict:
+    """画面で使うデモ：固定の入力 ＋ 事前に本物のAI（Claude）で作った出力（診断結果・テスト仕様）。"""
+    from .ai_outputs import apply_saved
+
+    p = build_inputs(demo_id)
+    apply_saved(p, demo_id)
+    return p
 
 
 def demo_info(demo_id: str) -> dict:
@@ -522,4 +544,4 @@ def cues_json() -> list:
         return json.load(f)
 
 
-__all__ = ["DEMOS", "EXPECTED", "build", "demo_info", "find"]
+__all__ = ["DEMOS", "EXPECTED", "build", "build_inputs", "build_scenario", "demo_info", "find"]

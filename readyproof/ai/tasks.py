@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import json
+import re
 
 from ..core import find, now_iso
 from ..logic import rules
@@ -136,10 +137,42 @@ def _map_evidence(items: list, refmap: dict, kind_default: str = "資料の記�
     return out
 
 
+_REF = re.compile(r"(?<![A-Za-z0-9])E[0-9]+(?![0-9])")
+
+
+def _ref_text(project: dict, refmap: dict, text):
+    """AIの文中の参照キー（E3 など）を、人が読める資料名・位置に置き換える。"""
+    if not isinstance(text, str) or not text:
+        return text
+
+    def rep(m):
+        ref = refmap.get(m.group(0))
+        if not ref:
+            return m.group(0)
+        if ref["ref_type"] == "utterance":
+            rec = find(project, "recordings", ref.get("rec_id", "")) or {}
+            u = next((x for x in rec.get("utterances", []) if x["id"] == ref.get("utt_id")), {})
+            return f"録画{fmt_ts(u.get('start'))}の発言（{u.get('speaker_role') or '話者未分類'}）"
+        src = find(project, "sources", ref.get("source_id", "")) or {}
+        seg = next((g for g in src.get("segments", []) if g["seg_id"] == ref.get("seg_id")), {})
+        return f"「{src.get('name', '資料')}」{seg.get('loc_label', '')}"
+
+    return _REF.sub(rep, text)
+
+
+def _ref_all(project: dict, refmap: dict, obj):
+    if isinstance(obj, dict):
+        return {k: (v if k in ("ref", "quote") else _ref_all(project, refmap, v)) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_ref_all(project, refmap, v) for v in obj]
+    return _ref_text(project, refmap, obj)
+
+
 def apply_diagnosis(project: dict, data: dict, refmap: dict, product_id: str | None,
                     origin: str = "AI生成", allowed_req_ids: list | None = None) -> list[dict]:
     created = []
     for d in data.get("diagnoses", []):
+        d = _ref_all(project, refmap, d)
         if allowed_req_ids is not None and d.get("req_id") not in allowed_req_ids:
             continue
         if not find(project, "requirements", d.get("req_id", "")):
@@ -292,12 +325,17 @@ def run_tests_multi(project: dict, req_ids: list[str], ai, settings, ledger=None
     """確定した要件のテスト仕様をAIでまとめて作る（下書き）。既存のテストは上書きしない。"""
     prompt = build_tests_input(project, req_ids)
     res = execute(ai, "generate_tests", prompt, TEST_MULTI_SCHEMA, 16000, settings, ledger, code)
+    return apply_tests_multi(project, res.data, req_ids, "AI生成", settings.limits.max_tests_per_generation)
+
+
+def apply_tests_multi(project: dict, data: dict, req_ids: list[str], origin: str, limit: int) -> list[dict]:
     out = []
-    for item in res.data.get("tests", [])[: settings.limits.max_tests_per_generation]:
+    for item in data.get("tests", [])[:limit]:
+        item = dict(item)
         rid = item.pop("req_id", "")
         if rid not in req_ids:
             continue
-        out.append(rules.add_test(project, {**item, "req_ids": [rid], "expected_confirmed": False}, origin="AI生成"))
+        out.append(rules.add_test(project, {**item, "req_ids": [rid], "expected_confirmed": False}, origin=origin))
     return out
 
 

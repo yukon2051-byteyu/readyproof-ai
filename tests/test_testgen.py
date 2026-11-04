@@ -4,7 +4,7 @@ import io
 import openpyxl
 
 from readyproof.core import find
-from readyproof.demos.builder import build
+from readyproof.demos.builder import build_scenario as build
 from readyproof.export.excel import acceptance_test_workbook
 from readyproof.logic import rules
 from readyproof.testgen import draft_tests, specs_for

@@ -210,7 +210,8 @@ def review_chip(status: str, origin: str = "") -> str:
         return badge("人が確認済み", "green", "verified")
     if status == "要修正":
         return badge("要修正", "orange", "edit")
-    label = {"準備済みのデモ結果": "準備済みのデモ結果・未確認", "AI生成": "AIの下書き・未確認"}.get(origin, "手動作成・未確認")
+    label = ("AIの下書き・未確認" if (origin or "").startswith("AI生成")
+             else {"準備済みのデモ結果": "準備済みのデモ結果・未確認"}.get(origin, "手動作成・未確認"))
     return badge(label, "gray", "edit_note")
 
 
