@@ -1,7 +1,7 @@
 """トップページ：3分で価値が伝わる構成。
 
 1. 見出し帯（何をするアプリか）
-2. 3分デモ：開始ボタン・操作の流れ（5ステップ）・最終的な成果物（根拠付きの診断と Excel レポートの見本）
+2. 4段階（入力2つ → 出力2つ）と、3分デモの開始ボタン
 3. できること・役割分担
 4. 3件のデモの選択
 5. 自分の案件で使う
@@ -94,7 +94,7 @@ def render():
            f'<div class="b">{esc(x)}</div></div>' for m, w, d, x in ROLES])
 
     # ---- 3件のデモ ----
-    section("ほかのデモ（各約4分・5ステップ）")
+    section("ほかのデモ（各約3分・4ステップ）")
     _grid([f'<div class="rp-card"><div class="t">{esc(d["title"])}</div><div class="b">{esc(d["theme"])}</div>'
            f'<ul>{"".join(f"<li>{esc(x)}</li>" for x in DEMO_POINTS[d["id"]])}</ul>'
            f'<div class="m">業務：{esc(d["business"])}</div></div>' for d in DEMOS])

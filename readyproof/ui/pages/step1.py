@@ -29,9 +29,17 @@ def render():
     with st.expander("案件と製品の情報", expanded=not p["products"]):
         project_page.project_form(p)
 
-    upload(p)
-    pending_media(p)
-    items(p)
+    has = any(x["owner"] == "製品" for x in p["sources"]) or p["recordings"]
+    if has:
+        items(p)
+        pending_media(p)
+        section("ファイルを追加する")
+        if st.toggle("資料・録画・字幕を追加する", key="show_upload", value=bool(st.session_state.get("pending_media"))):
+            upload(p)
+    else:
+        upload(p)
+        pending_media(p)
+        items(p)
     next_button("次へ：② 自社のルール", "input2")
 
 
