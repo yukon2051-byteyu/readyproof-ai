@@ -84,22 +84,19 @@ def render():
     _grid([f'<div class="rp-card"><div class="t"><span class="rp-num">{i + 1}</span>{esc(t)}</div>'
            f'<div class="m" style="margin-top:0;padding-top:0">{esc(io)}</div><div class="b">{esc(d)}</div></div>'
            for i, (io, t, d) in enumerate(FLOW)])
-    c1, c2 = st.columns([2, 1.2], vertical_alignment="center")
-    if c1.button("3分デモを始める（経費精算サービスの導入）", type="primary", icon=":material/play_arrow:",
-                 width="stretch", key="open_main"):
-        _open_demo("demo1")
-    c2.download_button("見本：受入テスト仕様書（Excel）", sample_report(), file_name="ReadyProof_サンプル_受入テスト仕様書.xlsx",
-                       mime=XLSX, icon=":material/download:", width="stretch")
-    st.caption("架空の会社・資料で、画面の案内に沿って約3分。料金はかかりません。")
 
-    # ---- 3件のデモ ----
-    section("ほかのデモ（各約3分・4ステップ）")
+    # ---- 3分デモ（3件から選ぶ） ----
+    section("3分デモ：見たいデモを選んでください（架空のデータ・料金なし）")
     _grid([f'<div class="rp-card"><div class="t">{esc(d["title"])}</div><div class="b">{esc(d["theme"])}</div>'
            f'<ul>{"".join(f"<li>{esc(x)}</li>" for x in DEMO_POINTS[d["id"]])}</ul>'
            f'<div class="m">業務：{esc(d["business"])}</div></div>' for d in DEMOS])
     for col, d in zip(st.columns(len(DEMOS)), DEMOS):
-        if col.button("このデモを始める", key=f"open_{d['id']}", icon=":material/play_arrow:", width="stretch"):
+        if col.button("このデモを始める", key=f"open_{d['id']}", type="primary", icon=":material/play_arrow:",
+                      width="stretch"):
             _open_demo(d["id"])
+    st.download_button("見本：受入テスト仕様書（Excel）をダウンロード", sample_report(),
+                       file_name="ReadyProof_サンプル_受入テスト仕様書.xlsx", mime=XLSX, icon=":material/download:",
+                       type="tertiary")
 
     # ---- 自分の案件 ----
     section("自分の案件で使う")

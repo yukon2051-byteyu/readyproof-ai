@@ -40,7 +40,6 @@ def test_home_shows_tagline_and_demos():
     assert TAGLINE.replace("「", "").split("」")[0][:8] in t.replace("「", "")
     assert "ReadyProof" in t and "AI受入テスト・導入確認支援システム" in t
     assert [b.label for b in at.button].count("このデモを始める") == 3
-    assert "3分デモを始める（経費精算サービスの導入）" in [b.label for b in at.button]
 
 
 def test_open_demo_from_home():

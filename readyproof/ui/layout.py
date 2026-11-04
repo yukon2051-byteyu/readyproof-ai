@@ -69,18 +69,13 @@ def apply_demo_state(p: dict, key: str) -> None:
 
 
 def header(key: str, title: str, desc: str) -> dict | None:
-    """画面の先頭：進み具合 → 画面名と説明 →（デモのときだけ）このデモの見どころ。案件がなければ案内して None。"""
+    """画面の先頭：進み具合 → 画面名と説明。案件がなければ案内して None。"""
     p = state.require_project()
     if not p:
         return None
     stepper(key)
     st.markdown(f'<div class="rp-title">{esc(title)}</div><div class="rp-desc">{esc(desc)}</div>',
                 unsafe_allow_html=True)
-    s = _demo_step(p, key)
-    if s:
-        point = s["title"].split("：", 1)[-1]
-        st.markdown(f'<div class="rp-demo"><span class="lb">このデモの見どころ</span>{esc(point)}'
-                    f'<div class="pt">{"<br>".join(esc(x) for x in s["points"])}</div></div>', unsafe_allow_html=True)
     return p
 
 

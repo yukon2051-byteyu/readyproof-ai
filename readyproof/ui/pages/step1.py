@@ -18,6 +18,7 @@ from . import project_page, recordings_view, sources
 DOC_EXT = {".pdf", ".docx", ".xlsx", ".pptx", ".txt", ".doc", ".xls", ".ppt"}
 MEDIA_EXT = {".mp4", ".webm", ".mov", ".m4a", ".mp3", ".wav"}
 SUB_EXT = {".vtt", ".srt"}
+FILE_LABEL = {"pdf": "PDF", "docx": "Word", "xlsx": "Excel", "pptx": "PowerPoint", "txt": "テキスト", "paste": "貼り付けた文章"}
 STATUS = {"ok": ("読込完了", "ok"), "partial": ("一部未読込", "warn"), "empty": ("文字なし", "bad"), "failed": ("読込失敗", "bad")}
 
 
@@ -125,7 +126,8 @@ def items(p):
         n_warn = len(s.get("warnings", [])) + (1 if cov.get("skipped") else 0)
         label, tone = STATUS[s["extract_status"]]
         sel = sum(1 for g in s["segments"] if g.get("selected"))
-        _row(("src", s["id"]), f"{s['name']}", f"{s['file_type'].upper()}／読込 {cov.get('read')}/{cov.get('total')}"
+        _row(("src", s["id"]), f"{s['name']}",
+             f"{FILE_LABEL.get(s['file_type'], s['file_type'])}・{s['kind']}／読込 {cov.get('read')}/{cov.get('total')}"
              f"{cov.get('unit', '')}／分析の対象 {sel}/{len(s['segments'])}箇所" + (f"／{s['status']}" if s["status"] != "有効" else ""),
              chip(label, tone) + (chip(f"注意 {n_warn}件", "warn") if n_warn else ""), opened)
         if opened == ("src", s["id"]):
