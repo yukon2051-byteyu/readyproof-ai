@@ -39,7 +39,7 @@ def test_home_shows_tagline_and_demos():
     t = texts(at)
     assert TAGLINE.replace("「", "").split("」")[0][:8] in t.replace("「", "")
     assert "ReadyProof AI" in t and "AI受入テスト・導入確認支援システム" in t
-    assert [b.label for b in at.button].count("このデモを開く") == 3
+    assert [b.label for b in at.button].count("このデモを始める") == 3
 
 
 def test_open_demo_from_home():
@@ -88,5 +88,6 @@ def test_status_not_color_only():
     from readyproof.ui.theme import category_chip, chip, review_chip
 
     assert "情報不足" in category_chip("情報不足・ベンダー確認が必要")
-    assert "AI下書き" in review_chip("未確認", "AI生成") and "dashed" not in chip("x")
+    assert "AIの下書き・未確認" in review_chip("未確認", "AI生成")
     assert "&lt;script&gt;" in chip("<script>")  # HTML はエスケープ
+    assert "[" not in chip("a]b[c").split("[", 1)[1].rsplit("]", 1)[0]  # バッジ記法を壊す文字を置き換える

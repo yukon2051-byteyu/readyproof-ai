@@ -2,6 +2,8 @@
 
 起動：streamlit run app.py
 """
+import os
+
 import streamlit as st
 
 from readyproof.config import APP_NAME_EN
@@ -13,6 +15,8 @@ from readyproof.ui.theme import inject_css
 st.set_page_config(page_title=APP_NAME_EN, page_icon=":material/fact_check:", layout="wide",
                    initial_sidebar_state="expanded")
 inject_css()
+_ASSETS = os.path.join(os.path.dirname(__file__), "readyproof", "ui", "assets")
+st.logo(os.path.join(_ASSETS, "logo.svg"), size="large", icon_image=os.path.join(_ASSETS, "icon.svg"))
 
 P = st.Page
 pages = {
@@ -40,8 +44,7 @@ with st.sidebar:
                   help="確定・確認・実施の記録に残ります。認証はないため、本人確認や正式な承認ではありません。")
     p = state.project()
     if p:
-        st.caption(f"開いている案件：{p['project']['name']}")
-        st.caption("編集内容はこのブラウザのセッションだけに保持されます。保存は「保存・Excel出力」から。")
+        st.caption("編集内容はこの画面を開いている間だけ保持されます。続きから使うときは「保存・Excel出力」で保存してください。")
 
 state.show_flash()
 nav.run()

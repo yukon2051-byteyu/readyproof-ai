@@ -10,7 +10,7 @@ from ...logic import rules
 from ...logic.stale import run_stale_reasons, test_stale_reasons
 from .. import state
 from ..components import ai_panel, context_bar, name_required, page_title, run_ai
-from ..theme import RESULT_TONE, chip, esc
+from ..theme import RESULT_TONE, chip, esc, section
 
 FIELDS = [("purpose", "目的"), ("role", "操作する役割"), ("preconditions", "事前条件"), ("inputs", "入力"),
           ("steps", "操作手順（画面・ボタンが不明なら「要確認」）"), ("expected", "期待結果"), ("expected_basis", "期待結果の根拠"),
@@ -120,7 +120,7 @@ def detail(p, t):
         t["status"] = "廃止"
         st.rerun()
 
-    st.markdown("**実施結果を記録する**（人が実際の対象システムで試した結果）")
+    section("実施結果を記録する"); st.caption("人が実際の対象システムで試した結果")
     with st.form(f"form_run_{t['id']}_{t['version']}", clear_on_submit=True):
         c1, c2, c3 = st.columns(3)
         status = c1.selectbox("実施状態", RUN_STATUS, index=2)
@@ -147,7 +147,7 @@ def detail(p, t):
 
     runs = rules.runs_for(p, t["id"])
     if runs:
-        st.markdown("**実施の履歴**")
+        section("実施の履歴")
         for r in reversed(runs):
             stale = run_stale_reasons(p, r)
             label = r["result"] if r["status"] == "完了" else r["status"]
@@ -172,7 +172,7 @@ def detail(p, t):
 
 def ai_gen(p, reqs, filt):
     s = state.settings()
-    st.markdown("**AIでテストの下書きを作る**")
+    section("AIでテストの下書きを作る")
     confirmed = [r["id"] for r in reqs if r["status"] == "確定"]
     if filt == "すべて" or filt not in confirmed:
         st.caption("上の「要件で絞り込む」で確定済みの要件を1つ選ぶと使えます。")

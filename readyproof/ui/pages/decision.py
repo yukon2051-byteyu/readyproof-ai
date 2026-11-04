@@ -12,16 +12,10 @@ from ...logic import rules
 from ...logic.stale import decision_changed_since, decision_snapshot
 from .. import state
 from ..components import context_bar, page_title
-from ..theme import category_chip, chip, esc
+from ..theme import category_chip, chip, esc, section, tiles
 
 JUMP = {"自社に合うかを確認": "diagnosis", "質問・対応依頼": "questions", "試すこと・実施結果": "tests", "診断": "diagnosis",
         "テスト": "tests", "実施結果": "tests"}
-
-
-def _tile(col, label, value, note=""):
-    with col, st.container(border=True):
-        st.markdown(f"<div class='rp-small'>{esc(label)}</div><div style='font-size:1.4rem;font-weight:700'>{esc(value)}</div>"
-                    f"<div class='rp-small'>{esc(note)}</div>", unsafe_allow_html=True)
 
 
 def render():
@@ -35,33 +29,38 @@ def render():
     if decision_changed_since(p):
         st.warning("導入判断の後に、診断・テスト・依頼などの関連情報が更新されています。判断を見直してください。")
 
-    st.markdown("**資料・説明上の見込み（実機確認ではありません）**")
-    st.markdown("　".join(category_chip(c) + f"<b>{n}</b>" for c, n in m["by_category"].items())
-                + "　" + chip("診断なし", "muted") + f"<b>{m['no_diagnosis']}</b>", unsafe_allow_html=True)
-    c = st.columns(4)
-    _tile(c[0], "必須要件：資料・説明上の見込みなし", f"{len(m['must_unresolved'])}件", f"必須 {m['must']}件中")
-    _tile(c[1], "診断の人による確認", m["diag_reviewed"]["text"], "分母：診断済みの要件")
-    _tile(c[2], "根拠に矛盾", f"{m['contradictions']}件")
-    _tile(c[3], "情報不足・ベンダー確認", f"{m['lack_info']}件")
-
-    st.markdown("**実機テスト（人が実際に試した結果）**")
-    c = st.columns(5)
-    _tile(c[0], "合格率", m["pass_rate"]["text"], "分母：合否判定した最新結果（実施不能・未判定を除く）")
-    _tile(c[1], "実施済み", m["executed_rate"]["text"], "分母：有効なテスト全件")
-    _tile(c[2], "不合格", f"{len(m['failed'])}件")
-    _tile(c[3], "未実施", f"{len(m['not_run'])}件")
-    _tile(c[4], "必須要件：実機で合格未確認", f"{len(m['must_not_verified'])}件", f"必須 {m['must']}件中")
-
-    st.markdown("**質問・依頼**")
-    c = st.columns(5)
-    _tile(c[0], "未回答の質問", f"{len(m['unanswered'])}件")
-    _tile(c[1], "回答の確認待ち", f"{len(m['answer_unreviewed'])}件")
-    _tile(c[2], "未確定の依頼書", f"{len(m['cr_draft'])}件")
-    _tile(c[3], "対応中の依頼", f"{len(m['cr_active'])}件")
-    _tile(c[4], "再確認が必要", f"{len(m['stale'])}件", "古い根拠・旧版に基づく結果")
+    section("資料・説明上の見込み（実機での確認ではありません）")
+    st.markdown(" ".join(category_chip(c) + f"**{n}**　" for c, n in m["by_category"].items())
+                + category_chip(None) + f"**{m['no_diagnosis']}**")
+    tiles([
+        {"label": "必須要件のうち、見込みが立っていない", "value": f"{len(m['must_unresolved'])}件",
+         "note": f"必須 {m['must']}件中", "alert": bool(m["must_unresolved"])},
+        {"label": "診断を人が確認した割合", "value": m["diag_reviewed"]["text"], "note": "分母：診断済みの要件"},
+        {"label": "根拠に矛盾", "value": f"{m['contradictions']}件", "note": "書面での確認が必要",
+         "alert": bool(m["contradictions"])},
+        {"label": "情報不足・ベンダー確認", "value": f"{m['lack_info']}件", "note": "質問で解消する"},
+    ])
+    section("実機テスト（人が実際に試した結果）")
+    tiles([
+        {"label": "合格率", "value": m["pass_rate"]["text"], "note": "分母：合否を判定した最新結果"},
+        {"label": "実施済み", "value": m["executed_rate"]["text"], "note": "分母：有効なテスト全件"},
+        {"label": "不合格", "value": f"{len(m['failed'])}件", "note": "依頼書で対応", "alert": bool(m["failed"])},
+        {"label": "未実施", "value": f"{len(m['not_run'])}件", "note": "実施不能は別に数える"},
+        {"label": "必須要件のうち、実機で未確認", "value": f"{len(m['must_not_verified'])}件",
+         "note": f"必須 {m['must']}件中", "alert": bool(m["must_not_verified"])},
+    ])
+    section("質問・依頼")
+    tiles([
+        {"label": "未回答の質問", "value": f"{len(m['unanswered'])}件"},
+        {"label": "回答の確認待ち", "value": f"{len(m['answer_unreviewed'])}件"},
+        {"label": "未確定の依頼書", "value": f"{len(m['cr_draft'])}件"},
+        {"label": "対応中の依頼", "value": f"{len(m['cr_active'])}件"},
+        {"label": "再確認が必要", "value": f"{len(m['stale'])}件", "note": "古い根拠・旧版に基づく結果",
+         "alert": bool(m["stale"])},
+    ])
 
     issues = M.remaining_issues(p, m)
-    st.markdown(f"**残った問題（{len(issues)}件・すべて表示）**")
+    section(f"残った問題（{len(issues)}件・すべて表示）")
     if issues:
         df = pd.DataFrame(issues)
         ev = st.dataframe(df, hide_index=True, width="stretch", on_select="rerun", selection_mode="single-row",
@@ -83,7 +82,7 @@ def render():
 
     st.divider()
     d = p["decision"]
-    st.markdown("**導入判断（人が判断します）**")
+    section("導入判断（人が判断します）")
     if d["value"] != "未判断":
         st.markdown(f"{chip('現在の判断：' + d['value'], 'ok' if d['value'] == '導入可' else ('warn' if d['value'] == '条件付き導入可' else 'bad'))}"
                     f"<span class='rp-small'>{esc(d['by'])}（自己申告）／{esc(d['date'])}／理由：{esc(d['reason'])}"

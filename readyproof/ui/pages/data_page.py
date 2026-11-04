@@ -9,6 +9,7 @@ import streamlit as st
 from ...export.excel import questionnaire_workbook, report_workbook, request_workbook
 from ...export.jsonio import LoadError, content_summary, from_json_bytes, to_json_bytes
 from .. import state
+from ..theme import section
 from ..components import context_bar, page_title
 
 XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -20,7 +21,7 @@ def render():
     page_title("保存・Excel出力", "案件はJSONで保存し、後で読み込んで再開できます。Excelは社内共有・ベンダー送付用です。")
     if p:
         pid = p["project"]["id"]
-        st.markdown("**Excel出力**")
+        section("Excel出力")
         c1, c2 = st.columns(2)
         c1.download_button("適合性・導入確認レポート", report_workbook(p), file_name=f"{pid}_導入確認レポート.xlsx", mime=XLSX,
                            icon=":material/download:", type="primary")
@@ -32,7 +33,7 @@ def render():
             st.download_button("この依頼書を出力", request_workbook(p, cid), file_name=f"{cid}_依頼書.xlsx", mime=XLSX,
                                icon=":material/download:")
         st.divider()
-        st.markdown("**案件をJSONで保存**")
+        section("案件をJSONで保存")
         st.dataframe(pd.DataFrame(content_summary(p)), hide_index=True, width="stretch")
         c1, c2 = st.columns(2)
         notes = c1.checkbox("未選択の発表者ノートの本文も保存する", value=False)
@@ -49,7 +50,7 @@ def render():
     else:
         st.info("案件が開かれていません。保存済みのJSONを読み込めます。")
     st.divider()
-    st.markdown("**保存した案件を読み込む**")
+    section("保存した案件を読み込む")
     up = st.file_uploader("JSONファイル", type=["json"], key="data_load")
     if up is not None and st.button("読み込む（現在の案件と置き換え）"):
         try:

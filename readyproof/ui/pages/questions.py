@@ -13,7 +13,7 @@ from ...logic import rules
 from ...logic.evidence import evidence_label
 from .. import evidence_picker, state
 from ..components import ai_panel, context_bar, evidence_view, name_required, page_title, run_ai
-from ..theme import REQUEST_TONE, chip, esc
+from ..theme import REQUEST_TONE, chip, esc, section
 
 VIEWS = ["質問", "対応方法", "依頼書"]
 XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -109,7 +109,7 @@ def question_detail(p, q):
         st.caption("このアプリはメールを送信しません。実際に送付した後で記録してください。")
     if q["status"] in ("送付済み", "確定", "回答あり"):
         with st.container(border=True):
-            st.markdown("**回答を記録する**")
+            section("回答を記録する")
             src = st.radio("回答元", ["手動入力", "資料", "確認済み営業発言"], horizontal=True, key=f"form_as_{q['id']}")
             text = st.text_area("回答本文（受け取った内容をそのまま）", value=q.get("answer_text", ""), key=f"form_at_{q['id']}")
             d = st.date_input("回答日", value=date.today(), key=f"form_ad_{q['id']}")
@@ -308,7 +308,7 @@ def request_detail(p, c):
                    + "／関連実施：" + ("、".join(c.get("run_ids", [])) or "なし"))
 
     with st.container(border=True):
-        st.markdown("**状態を記録する**（送付・回答など外部の出来事は、人が記録したときだけ反映します）")
+        section("状態を記録する"); st.caption("送付・回答など外部の出来事は、人が記録したときだけ反映します")
         c1, c2 = st.columns([1, 2])
         new = c1.selectbox("次の状態", [x for x in REQUEST_STATUS if x != c["status"]], key=f"form_crs_{c['id']}")
         reason = c2.text_input("理由・メモ（見送り・残件付き完了は必須）", key=f"form_crr_{c['id']}")

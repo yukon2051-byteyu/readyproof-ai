@@ -1,10 +1,13 @@
-"""画面共通のデザイン（色・状態ラベル・CSS）。
+"""画面共通のデザイン（色・状態ラベル・余白・枠）。
 
 方針（docs/design_research.md）：
-- 作業画面は情報密度を優先し、装飾を抑える
-- 状態は「色＋文字」で示す（色だけに頼らない）。枠線の実線／破線で人の確認済み／AI下書きを区別
-- Streamlit の内部クラス名には依存せず、自前クラスと st.container(key=...) の st-key-* だけを使う
-- アイコンは Streamlit の Material アイコン（:material/...:）を使い、絵文字・記号フォントに頼らない
+- 色は役割を固定して数を絞る。紺＝ブランド・主操作、緑＝OK・見込みあり、橙＝注意・追加対応、
+  赤＝不可・不合格、紫＝矛盾、灰＝未確認・不明・補足情報、青＝進行中だけ
+- 状態は Streamlit 標準の「バッジ」（:color-badge[...]）で、色＋文字（＋アイコン）で示す
+- 補足情報（作成元・種類など）は色を付けず、灰色の小さな文字にする
+- 文字サイズは「画面名／小見出し／本文」の3段階
+- 横に並ぶ枠は CSS グリッドで高さをそろえる（下端をそろえる）
+- Streamlit 内部のクラス名には依存しない。data-testid と st.container(key=...) の st-key-* のみ使う
 """
 from __future__ import annotations
 
@@ -12,49 +15,72 @@ import html
 
 import streamlit as st
 
-# 文字色と背景色のコントラストは 4.5:1 以上になる組み合わせ（WCAG AA）
-TONES = {
-    "ok": ("#1E5631", "#E3F2E7"),
-    "teal": ("#0B5563", "#E0F2F4"),
-    "warn": ("#7A4B00", "#FFF1D6"),
-    "bad": ("#8A1C1C", "#FBE4E4"),
-    "info": ("#33465C", "#EAEFF5"),
-    "purple": ("#5B2A86", "#F1E6FB"),
-    "muted": ("#4A5563", "#F1F3F6"),
-}
+NAVY = "#14263F"
+PRIMARY = "#1F4E8C"
+MUTED = "#5B6574"
+BORDER = "#DDE3EA"
 
-CATEGORY_TONE = {
-    "そのまま対応できる見込み": "ok",
-    "標準設定で対応できる見込み": "teal",
-    "追加対応の検討が必要": "warn",
-    "対応不可との記載・確認済み発言あり": "bad",
-    "情報不足・ベンダー確認が必要": "info",
-    "根拠間に矛盾あり": "purple",
-}
-RESULT_TONE = {"合格": "ok", "不合格": "bad", "未判定": "muted", "実施不能": "warn", "未実施": "muted", "実施中": "info"}
-REQUEST_TONE = {"下書き": "muted", "確定": "info", "送付済み": "info", "回答待ち": "warn", "対応検討中": "warn",
-                "対応中": "warn", "テスト待ち": "teal", "完了": "ok", "見送り": "muted"}
+# 状態の種類 → Streamlit バッジの色
+TONE_COLOR = {"ok": "green", "teal": "green", "warn": "orange", "bad": "red", "purple": "violet",
+              "active": "blue", "info": "gray", "muted": "gray"}
 
-CSS = """
+CATEGORY_STYLE = {
+    "そのまま対応できる見込み": ("green", "check_circle"),
+    "標準設定で対応できる見込み": ("green", "tune"),
+    "追加対応の検討が必要": ("orange", "build"),
+    "対応不可との記載・確認済み発言あり": ("red", "block"),
+    "情報不足・ベンダー確認が必要": ("gray", "help"),
+    "根拠間に矛盾あり": ("violet", "sync_problem"),
+}
+CATEGORY_TONE = {k: {"green": "ok", "orange": "warn", "red": "bad", "gray": "muted", "violet": "purple"}[v[0]]
+                 for k, v in CATEGORY_STYLE.items()}
+RESULT_TONE = {"合格": "ok", "不合格": "bad", "未判定": "muted", "実施不能": "warn", "未実施": "muted", "実施中": "active"}
+REQUEST_TONE = {"下書き": "muted", "確定": "muted", "送付済み": "active", "回答待ち": "active", "対応検討中": "active",
+                "対応中": "active", "テスト待ち": "active", "完了": "ok", "見送り": "muted"}
+
+CSS = f"""
 <style>
-.rp-chip{display:inline-block;padding:1px 8px;margin:0 4px 2px 0;border-radius:4px;font-size:0.82rem;
-  line-height:1.5;border:1px solid currentColor;white-space:nowrap;font-weight:600}
-.rp-chip.draft{border-style:dashed;font-weight:500}
-.rp-ctx{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center;padding:6px 12px;margin:-8px 0 10px 0;
-  background:#F3F6FA;border:1px solid #D5DDE8;border-radius:6px;font-size:0.88rem;color:#1A2433}
-.rp-ctx b{color:#1F3A5F}
-.rp-steps{display:flex;flex-wrap:wrap;gap:4px;margin:0}
-.rp-step{padding:1px 8px;border-radius:12px;font-size:0.8rem;border:1px solid #B7C2D0;color:#33465C;background:#fff}
-.rp-step.on{background:#1F3A5F;color:#fff;border-color:#1F3A5F}
-.rp-quote{border-left:3px solid #8DA2BC;padding:2px 10px;margin:4px 0;color:#1A2433;background:#F8FAFC;
-  white-space:pre-wrap;word-break:break-word}
-.rp-small{font-size:0.85rem;color:#4A5563}
-.rp-hero h1{font-size:2.1rem;margin:0 0 2px 0;color:#1F3A5F}
-.rp-hero .ja{font-size:1.05rem;color:#33465C;margin:0 0 14px 0}
-.rp-hero .tag{font-size:1.45rem;font-weight:700;color:#1A2433;margin:0 0 8px 0;line-height:1.5}
-.rp-flow{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:6px 0}
-.rp-flow div{border:1px solid #D5DDE8;border-radius:6px;padding:8px 10px;background:#fff;font-size:0.88rem}
-.rp-flow div b{display:block;color:#1F3A5F;margin-bottom:2px}
+/* 上の余白を詰める（Streamlit 標準は約6rem） */
+[data-testid="stMainBlockContainer"] {{ padding-top: 1.75rem; padding-bottom: 3rem; max-width: 1240px; }}
+[data-testid="stHeader"] {{ background: transparent; height: 2.5rem; }}
+
+/* 画面の見出し（3段階：画面名 1.55rem／小見出し 1.05rem／本文） */
+.rp-ctx {{ font-size: .82rem; color: {MUTED}; margin: 0 0 .1rem; }}
+.rp-title {{ font-size: 1.55rem; font-weight: 700; color: {NAVY}; line-height: 1.35; margin: 0; }}
+.rp-desc {{ font-size: .9rem; color: {MUTED}; margin: .15rem 0 1rem; }}
+.rp-h {{ font-size: 1.05rem; font-weight: 700; color: {NAVY}; margin: 1.1rem 0 .4rem; }}
+.rp-small {{ font-size: .84rem; color: {MUTED}; }}
+.rp-quote {{ border-left: 3px solid #C9D3E0; background: #F7F9FC; padding: 4px 10px; margin: 4px 0 8px;
+  white-space: pre-wrap; word-break: break-word; }}
+
+/* 横並びの枠：高さをそろえる */
+.rp-grid {{ display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); gap: 12px;
+  align-items: stretch; margin: .2rem 0 1rem; }}
+.rp-tile {{ border: 1px solid {BORDER}; border-radius: 8px; padding: 12px 14px; background: #fff;
+  display: flex; flex-direction: column; }}
+.rp-tile .lb {{ font-size: .82rem; color: {MUTED}; min-height: 2.6em; }}
+.rp-tile .v {{ font-size: 1.55rem; font-weight: 700; color: {NAVY}; line-height: 1.25; padding-top: 4px; }}
+.rp-tile .n {{ font-size: .76rem; color: {MUTED}; margin-top: auto; padding-top: 4px; }}
+.rp-tile.alert {{ border-color: #E9B4B4; }}
+.rp-tile.alert .v {{ color: #B42318; }}
+.rp-card {{ border: 1px solid {BORDER}; border-radius: 10px; padding: 16px 18px; background: #fff;
+  display: flex; flex-direction: column; gap: 6px; }}
+.rp-card .t {{ font-size: 1.05rem; font-weight: 700; color: {NAVY}; }}
+.rp-card .b {{ font-size: .9rem; color: #1F2937; }}
+.rp-card .m {{ font-size: .8rem; color: {MUTED}; margin-top: auto; padding-top: 6px; }}
+.rp-card ul {{ margin: 0 0 0 1.1rem; padding: 0; font-size: .86rem; color: #1F2937; }}
+
+/* トップページの見出し帯 */
+.rp-hero {{ background: {NAVY}; border-radius: 12px; padding: 26px 30px 24px; margin: 0 0 18px; }}
+.rp-hero .eyebrow {{ font-size: .9rem; color: #B9C7DA; font-weight: 500; letter-spacing: .03em; }}
+.rp-hero .name {{ font-size: 2.6rem; font-weight: 800; color: #fff; line-height: 1.15; margin: 4px 0 10px; }}
+.rp-hero .tag {{ font-size: 1.3rem; font-weight: 700; color: #fff; line-height: 1.5; }}
+.rp-hero .desc {{ font-size: .95rem; color: #DCE4EE; margin-top: 6px; }}
+
+/* ガイド付きデモの帯 */
+.st-key-tour {{ background: #F1F5FB; border: 1px solid #B9C7DA; border-radius: 10px; padding: 10px 14px 4px; }}
+
+@media (max-width: 800px) {{ .rp-grid {{ grid-template-columns: 1fr; }} .rp-hero .name {{ font-size: 2rem; }} }}
 </style>
 """
 
@@ -68,25 +94,36 @@ def esc(text) -> str:
     return html.escape(str(text if text is not None else ""))
 
 
+def badge(label: str, color: str = "gray", icon: str | None = None) -> str:
+    """Streamlit 標準のバッジ（Markdown 記法）。文字と色の両方で状態を示す。"""
+    safe = esc(label).replace("[", "（").replace("]", "）")
+    ic = f":material/{icon}: " if icon else ""
+    return f":{color}-badge[{ic}{safe}] "
+
+
 def chip(label: str, tone: str = "muted", draft: bool = False) -> str:
-    fg, bg = TONES.get(tone, TONES["muted"])
-    cls = "rp-chip draft" if draft else "rp-chip"
-    return f'<span class="{cls}" style="color:{fg};background:{bg}">{esc(label)}</span>'
+    return badge(label, TONE_COLOR.get(tone, "gray"))
 
 
 def category_chip(cat: str | None) -> str:
     if not cat:
-        return chip("診断なし", "muted")
-    return chip(cat, CATEGORY_TONE.get(cat, "muted"))
+        return badge("診断なし", "gray")
+    color, icon = CATEGORY_STYLE.get(cat, ("gray", None))
+    return badge(cat, color, icon)
 
 
 def review_chip(status: str, origin: str = "") -> str:
     if status == "人が確認済み":
-        return chip("人が確認済み", "ok")
+        return badge("人が確認済み", "green", "verified")
     if status == "要修正":
-        return chip("要修正", "warn", draft=True)
-    label = {"準備済みのデモ結果": "準備済みのデモ結果（未確認）", "AI生成": "AI下書き（未確認）"}.get(origin, "手動作成（未確認）")
-    return chip(label, "muted", draft=True)
+        return badge("要修正", "orange", "edit")
+    label = {"準備済みのデモ結果": "準備済みのデモ結果・未確認", "AI生成": "AIの下書き・未確認"}.get(origin, "手動作成・未確認")
+    return badge(label, "gray", "edit_note")
+
+
+def meta(text: str) -> str:
+    """補足情報（色を付けない灰色の小さな文字）。"""
+    return f'<span class="rp-small">{esc(text)}</span>'
 
 
 def html_line(*parts: str) -> None:
@@ -95,3 +132,17 @@ def html_line(*parts: str) -> None:
 
 def quote(text: str) -> None:
     st.markdown(f'<div class="rp-quote">{esc(text)}</div>', unsafe_allow_html=True)
+
+
+def section(title: str) -> None:
+    st.markdown(f'<div class="rp-h">{esc(title)}</div>', unsafe_allow_html=True)
+
+
+def tiles(items: list[dict], cols: int | None = None) -> None:
+    """数値の枠を横に並べる（高さをそろえる）。items: {label, value, note?, alert?}"""
+    n = cols or len(items)
+    html_ = "".join(
+        f'<div class="rp-tile{" alert" if it.get("alert") else ""}"><div class="lb">{esc(it["label"])}</div>'
+        f'<div class="v">{esc(it["value"])}</div><div class="n">{esc(it.get("note", "")) or "&nbsp;"}</div></div>'
+        for it in items)
+    st.markdown(f'<div class="rp-grid" style="--cols:{n}">{html_}</div>', unsafe_allow_html=True)

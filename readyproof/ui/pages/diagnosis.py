@@ -11,7 +11,7 @@ from ...logic.stale import diagnosis_stale_reasons
 from ...media.subtitles import fmt_ts
 from .. import evidence_picker, state
 from ..components import (ai_panel, context_bar, evidence_view, name_required, page_title, run_ai, validity_note)
-from ..theme import category_chip, chip, esc, review_chip
+from ..theme import category_chip, chip, esc, review_chip, section
 
 
 def render():
@@ -108,7 +108,7 @@ def detail(p, r):
         st.caption("制約：" + dg["constraints"])
     st.markdown(f"**次に確認すること**：{esc(dg.get('next_check') or '未記入')}", unsafe_allow_html=True)
 
-    st.markdown("**根拠**")
+    section("根拠")
     if not dg["evidence"]:
         st.caption("根拠がありません（記載・発言がないことは「対応不可」ではありません）。")
     for i, ev in enumerate(dg["evidence"]):
@@ -141,7 +141,7 @@ def detail(p, r):
                 st.rerun()
 
     with st.container(border=True):
-        st.markdown("**人が確認する**")
+        section("人が確認する")
         c1, c2 = st.columns([2, 1])
         cat = c1.selectbox("診断区分", DIAG_CATEGORIES, index=DIAG_CATEGORIES.index(dg["category"]),
                            key=f"form_cat_{dg['id']}")
@@ -235,7 +235,7 @@ def candidates(p, r, pid):
 def ai_section(p, reqs):
     s = state.settings()
     confirmed = [r for r in reqs if r["status"] == "確定"]
-    st.markdown("**AIで診断の下書きを作る**")
+    section("AIで診断の下書きを作る")
     if not confirmed:
         st.caption("確定した要件がありません。要件を人が確定してから診断します。")
         return

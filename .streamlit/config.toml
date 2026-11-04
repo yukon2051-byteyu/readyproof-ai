@@ -1,9 +1,30 @@
 [theme]
 base = "light"
+# 色は役割を固定（docs/design_research.md）
 primaryColor = "#1F4E8C"
 backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#F3F6FA"
-textColor = "#1A2433"
+secondaryBackgroundColor = "#F4F6F9"
+textColor = "#1F2937"
+borderColor = "#DDE3EA"
+linkColor = "#1F4E8C"
+greenColor = "#1E7B45"
+orangeColor = "#B45309"
+redColor = "#B42318"
+violetColor = "#6B3FA0"
+blueColor = "#1F4E8C"
+grayColor = "#5B6574"
+# 日本語を全端末で同じ見た目にする（Google Fonts）。読めない場合は端末の標準フォント
+font = "Noto Sans JP:https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;800&display=swap, sans-serif"
+baseFontSize = 15
+headingFontSizes = ["1.55rem", "1.3rem", "1.05rem", "1rem", "0.95rem", "0.9rem"]
+baseRadius = "0.5rem"
+
+[theme.sidebar]
+backgroundColor = "#F4F6F9"
+
+[client]
+# 右上の開発者向けメニューを最小限にする
+toolbarMode = "minimal"
 
 [server]
 # 公開環境では処理能力が小さいため、プログラム変更の監視（自動再読込）を止める

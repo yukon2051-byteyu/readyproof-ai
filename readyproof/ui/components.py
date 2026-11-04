@@ -8,51 +8,109 @@ from ..ai.tasks import estimate_cost_jpy
 from ..core import primary_product
 from ..logic.evidence import VALIDITY_NOTE, evidence_label, validate_evidence
 from . import state
-from .theme import chip, esc
+from .theme import badge, chip, esc
 
-STEPS = [("sources", "1 製品の資料・営業説明"), ("requirements", "2 自社の仕事・ルール"), ("diagnosis", "3 自社に合うかを確認"),
-         ("questions", "4 質問・対応依頼"), ("tests", "5 試すこと・実施結果"), ("decision", "6 残った問題と導入判断")]
+STEPS = {"sources": "ステップ1", "requirements": "ステップ2", "diagnosis": "ステップ3", "questions": "ステップ4",
+         "tests": "ステップ5", "decision": "ステップ6"}
 
 
 def context_bar(current: str) -> None:
-    """現在の案件・製品・作業位置。"""
+    """画面上部：ガイド付きデモの帯（デモ中のみ）と、現在の案件・製品（灰色の補足）。"""
     p = state.project()
     if not p:
         return
+    tour_bar(current)
     prod = primary_product(p) or {}
-    demo = chip("架空のデモ", "warn") if p["project"].get("demo_id") else ""
-    steps = "".join(f'<span class="rp-step{" on" if k == current else ""}">{esc(lbl)}</span>' for k, lbl in STEPS)
-    st.markdown(
-        f'<div class="rp-ctx"><span>案件 <b>{esc(p["project"]["name"])}</b></span>'
-        f'<span>製品 <b>{esc(prod.get("name", "未登録"))}</b>／プラン <b>{esc(prod.get("plan", "未記入") or "未記入")}</b></span>'
-        f'{demo}<span class="rp-steps">{steps}</span></div>', unsafe_allow_html=True)
+    demo = "架空のデモ ／ " if p["project"].get("demo_id") else ""
+    step = f"{STEPS[current]} ／ " if current in STEPS else ""
+    st.markdown(f'<div class="rp-ctx">{esc(step + demo)}{esc(p["project"]["name"])} ／ '
+                f'{esc(prod.get("name", "製品未登録"))}（{esc(prod.get("plan") or "プラン未記入")}）</div>',
+                unsafe_allow_html=True)
 
 
 def page_title(title: str, help_text: str = "") -> None:
-    st.subheader(title)
-    if help_text:
-        st.caption(help_text)
+    """画面名（1段目）と説明（灰色）。番号は上の補足行に出すので、画面名からは外す。"""
+    name = title.split(" ", 1)[1] if title[:1].isdigit() and " " in title else title
+    st.markdown(f'<div class="rp-title">{esc(name)}</div>'
+                + (f'<div class="rp-desc">{esc(help_text)}</div>' if help_text else ""), unsafe_allow_html=True)
+
+
+# ---------------- ガイド付きデモ ----------------
+def start_tour(demo_id: str) -> None:
+    st.session_state.tour = {"demo": demo_id, "step": 0}
+    go_step(0)
+
+
+def go_step(i: int) -> None:
+    from ..demos.tour import TABLE_KEYS, TOURS
+
+    t = st.session_state.get("tour")
+    if not t:
+        return
+    steps = TOURS[t["demo"]]
+    t["step"] = i
+    if i >= len(steps):
+        state.goto("decision")
+        return
+    for k in TABLE_KEYS:  # 前の画面の表の選択が、次に選ぶ項目を上書きしないようにする
+        st.session_state.pop(k, None)
+    for k, v in steps[i]["state"].items():
+        st.session_state[k] = v
+    state.goto(steps[i]["page"])
+
+
+def tour_bar(current: str) -> None:
+    from ..demos.tour import TOURS
+
+    t = st.session_state.get("tour")
+    p = state.project()
+    if not t or not p or p["project"].get("demo_id") != t["demo"]:
+        return
+    steps = TOURS[t["demo"]]
+    i = t["step"]
+    with st.container(key="tour"):
+        if i >= len(steps):
+            st.markdown(badge("ガイド付きデモ 完了", "green", "flag") + " **お疲れさまでした。**"
+                        "資料の照合から、質問・依頼・テスト・判断までの流れを一通り見ました。")
+            c1, c2, _ = st.columns([1.2, 1.2, 3])
+            if c1.button("ホームで別のデモを選ぶ", key="tour_home"):
+                st.session_state.pop("tour", None)
+                state.goto("home")
+            if c2.button("ガイドを閉じる", key="tour_close_done", type="tertiary"):
+                st.session_state.pop("tour", None)
+                st.rerun()
+            return
+        s = steps[i]
+        st.markdown(badge(f"ガイド付きデモ {i + 1}/{len(steps)}", "blue", "explore") + f" **{s['title']}**")
+        st.markdown(chr(10).join(f"- {x}" for x in s["points"]))
+        c1, c2, c3, _ = st.columns([0.8, 1.6, 1, 2])
+        if c1.button("前へ", key="tour_prev", disabled=i == 0, icon=":material/arrow_back:"):
+            go_step(i - 1)
+        nxt = "最後のまとめへ" if i == len(steps) - 1 else "次へ"
+        if c2.button(nxt, key="tour_next", type="primary", icon=":material/arrow_forward:"):
+            go_step(i + 1)
+        if c3.button("ガイドを閉じる", key="tour_close", type="tertiary"):
+            st.session_state.pop("tour", None)
+            st.rerun()
 
 
 def evidence_view(p: dict, ev: dict, product_id: str | None, idx: int | None = None) -> dict:
-    """根拠1件：表示＋検証結果。"""
+    """根拠1件：表示＋検証結果。問題がある場合だけ色を付ける。"""
     v = validate_evidence(p, ev, product_id)
-    kind = ev.get("kind", "")
-    head = chip(kind or "根拠", "info")
+    head = ""
     if not v["ok"]:
-        head += chip("検証エラー", "bad")
+        head = badge("検証エラー", "red", "error")
     elif v["warnings"]:
-        head += chip("要注意", "warn")
-    else:
-        head += chip("引用の実在を確認", "ok")
+        head = badge("要注意", "orange", "warning")
     label = evidence_label(p, ev, with_quote=False)
-    st.markdown(f'{head}<span class="rp-small">{esc(label)}</span>', unsafe_allow_html=True)
+    st.markdown(f'{head}<span class="rp-small">{esc(ev.get("kind") or "根拠")}｜{esc(label)}</span>',
+                unsafe_allow_html=True)
     if ev.get("quote"):
         st.markdown(f'<div class="rp-quote">『{esc(ev["quote"])}』</div>', unsafe_allow_html=True)
     for e in v["errors"]:
-        st.markdown(f'<div class="rp-small" style="color:#8A1C1C">エラー：{esc(e)}</div>', unsafe_allow_html=True)
+        st.markdown(f":red[エラー：{esc(e)}]")
     for w in v["warnings"]:
-        st.markdown(f'<div class="rp-small" style="color:#7A4B00">注意：{esc(w)}</div>', unsafe_allow_html=True)
+        st.markdown(f":orange[注意：{esc(w)}]")
     return v
 
 

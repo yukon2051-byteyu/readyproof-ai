@@ -5,6 +5,7 @@ import streamlit as st
 
 from ...core import log, primary_product
 from .. import state
+from ..theme import section
 from ..components import context_bar, page_title
 
 
@@ -16,7 +17,7 @@ def render():
     page_title("案件・製品", "最初の版は1案件1候補製品を扱います。根拠（資料・録画）はこの製品に関連付けられます。")
     pj = p["project"]
     with st.form("form_project"):
-        st.markdown("**案件**")
+        section("案件")
         c1, c2 = st.columns([1, 3])
         c1.text_input("案件ID", value=pj["id"], disabled=True)
         name = c2.text_input("案件名", value=pj["name"])
@@ -28,7 +29,7 @@ def render():
                                    placeholder="例：予算、稼働時期、使える端末、社内規程を変更しない など")
         prod = primary_product(p) or {"id": "PR-001", "name": "", "vendor": "", "plan": "", "edition": "",
                                        "delivery": "SaaS", "as_of": "", "notes": ""}
-        st.markdown("**候補製品**")
+        section("候補製品")
         c1, c2, c3 = st.columns([1, 2, 2])
         c1.text_input("製品ID", value=prod["id"], disabled=True)
         pname = c2.text_input("製品名", value=prod["name"])

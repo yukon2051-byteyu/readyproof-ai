@@ -13,7 +13,7 @@ from ...media.probe import MediaError, extract_audio_wav, probe_media
 from ...media.subtitles import fmt_ts, parse_transcript
 from ...media.transcribe import ENGINES, local_whisper_available, transcribe_local
 from .. import state
-from ..theme import chip, esc
+from ..theme import chip, esc, section
 
 MEASURED = "実測：開発PC（Windows・CPU）で small モデル、40秒の音声に約39秒（モデル読込を含む）。公開環境（最大2コア）では遅くなる見込み。"
 
@@ -49,7 +49,7 @@ def _meta_inputs(prefix: str) -> dict:
 def register(p):
     s = state.settings()
     lim = s.limits
-    st.markdown("**録画（MP4・WebM・MOV）を登録して文字起こしする**")
+    section("録画（MP4・WebM・MOV）を登録して文字起こしする")
     st.caption("アップロードしただけでは処理を始めません。内容・範囲・処理方法を確認してから実行します。")
     ok, why = local_whisper_available()
     eng = ENGINES["local_whisper"]
@@ -150,7 +150,7 @@ def register(p):
                     if st.session_state.get("_goto_view") == "発言の確認":
                         st.rerun()
 
-    st.markdown("**代替：会議ツールの文字起こし・SRT・VTT・時刻付き文章を読み込む**")
+    section("代替：会議ツールの文字起こし・SRT・VTT・時刻付き文章を読み込む")
     with st.container(border=True):
         tf = st.file_uploader("文字起こしファイル（.vtt / .srt / .txt）", type=["vtt", "srt", "txt"], key="tr_file")
         pasted = st.text_area("または時刻付きの文章を貼り付け（例：00:01:23 鈴木: 発言）", key="tr_paste", height=90)
@@ -256,7 +256,7 @@ def review(p):
         log(p, "発言の確認・修正", rid, by)
         st.success("反映しました。原文は残り、修正は履歴に記録されています。")
 
-    st.markdown("**発言を聞き直す・前後を確認する**")
+    section("発言を聞き直す・前後を確認する")
     uid = st.selectbox("発言", [u["id"] for u in utts], key=f"sel_utt_{rid}",
                        format_func=lambda i: f"{i} {fmt_ts(next(x for x in utts if x['id'] == i).get('start'))} "
                                              f"{(next(x for x in utts if x['id'] == i).get('edited_text') or next(x for x in utts if x['id'] == i)['raw_text'])[:40]}")
@@ -279,7 +279,7 @@ def review(p):
         if u.get("history"):
             with st.expander(f"{uid} の修正履歴（{len(u['history'])}件）"):
                 st.dataframe(pd.DataFrame(u["history"]), hide_index=True)
-    st.markdown("**重要な口頭説明を書面で確認する**")
+    section("重要な口頭説明を書面で確認する")
     reqs = [r for r in p["requirements"] if r["status"] != "廃止"]
     rsel = st.multiselect("関連する要件", [r["id"] for r in reqs], key=f"form_wq_reqs_{rid}")
     if st.button("この発言から書面確認の質問を作る", key=f"wq_{rid}", icon=":material/mail:"):
