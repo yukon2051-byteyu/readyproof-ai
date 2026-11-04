@@ -30,6 +30,11 @@ def ledger() -> Ledger | None:
     s = settings()
     if not s.budget.usage_store_persistent:
         return None
+    if s.budget.usage_hf_repo:
+        from ..usage import HubLedger
+
+        token = os.environ.get("RP_HF_TOKEN", "")
+        return HubLedger(s.budget.usage_hf_repo, token) if token else None
     return Ledger(s.budget.usage_ledger_path)
 
 

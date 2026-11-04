@@ -185,3 +185,40 @@ def test_multi_requirement_test_specs(project, settings):
     assert all(t["status"] == "下書き" and t["test_data"] == "9,999円" and t["pass_criteria"] for t in made)
     assert all(t["req_ids"][0] in (r1["id"], r2["id"]) for t in made)
     assert project["tests"][0]["title"] == "既存" and project["tests"][0]["status"] == "確定"
+
+
+def test_hub_ledger_keeps_records_remotely(monkeypatch, settings):
+    """公開サイト用：利用記録は外部の保存場所に置き、再起動（新しいインスタンス）でも上限が効く。"""
+    from readyproof.usage import HubLedger
+
+    remote = {"body": ""}
+    monkeypatch.setattr(HubLedger, "_download", lambda self: remote["body"])
+
+    def upload(self, rec):
+        import json as _j
+        remote["body"] += _j.dumps(rec, ensure_ascii=False) + "\n"
+
+    monkeypatch.setattr(HubLedger, "_append", upload)
+    settings.budget.ai_runs_per_code_per_month = 1
+    lg = HubLedger("user/repo", "token")
+    rid = lg.reserve(settings.budget, "ai", "pw", 10.0, "diagnose")
+    lg.finalize(rid, "成功", 8.0, api_calls=1)
+    again = HubLedger("user/repo", "token")  # 再起動後の別インスタンス
+    assert again.summary("pw")["code"]["ai_runs"] == 1
+    import pytest
+    with pytest.raises(PermissionError):
+        again.reserve(settings.budget, "ai", "pw", 10.0, "diagnose")
+
+
+def test_hub_ledger_upload_failure_blocks_paid_run(monkeypatch, settings):
+    from readyproof.usage import HubLedger
+
+    monkeypatch.setattr(HubLedger, "_download", lambda self: "")
+
+    def fail(self, rec):
+        raise OSError("network")
+
+    monkeypatch.setattr(HubLedger, "_append", fail)
+    import pytest
+    with pytest.raises(OSError):
+        HubLedger("user/repo", "token").reserve(settings.budget, "ai", "pw", 10.0, "diagnose")

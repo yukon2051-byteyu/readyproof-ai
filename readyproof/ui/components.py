@@ -155,7 +155,11 @@ def ai_panel(key: str, task_label: str, preview_text: str, max_tokens: int, deta
         blockers = paid_ai_blockers(s, code)
         lg = state.ledger()
         if lg and not blockers:
-            summ = lg.summary(st.session_state.get("access_code", ""))
+            try:
+                summ = lg.summary(st.session_state.get("access_code", ""))
+            except Exception:  # 記録先に届かないときは実行させない（上限を確認できないため）
+                st.caption("実行できません：利用記録の保存先に接続できません。時間をおいて再度お試しください。")
+                return None
             st.caption(f"今月の利用：AI生成 {summ['code']['ai_runs']}/{s.budget.ai_runs_per_code_per_month} 回（このAIパスワード）、"
                        f"アプリ全体 {summ['all']['cost_jpy']:,.0f}/{s.budget.monthly_budget_jpy:,} 円")
         if blockers:

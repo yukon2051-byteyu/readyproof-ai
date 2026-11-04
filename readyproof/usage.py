@@ -125,3 +125,51 @@ class Ledger:
             rec["minutes"] = minutes
         with _LOCK:
             self._append(rec)
+
+
+class HubLedger(Ledger):
+    """利用記録を Hugging Face の非公開データ置き場（dataset リポジトリ）に保存する。
+
+    公開サイト（Hugging Face Spaces）のディスクは再起動で消えるため、月の上限が効かなくなるのを防ぐ。
+    - 読むたびに最新の記録を取得し、書くたびに全体を送り直す（記録は小さく、1台で動かすため十分）
+    - 送れなかった場合は例外にする（予約できない＝有料処理を実行しない、安全側）
+    """
+
+    FILE = "usage_ledger.jsonl"
+
+    def __init__(self, repo_id: str, token: str, cache_path: str = "data/usage_ledger_cache.jsonl"):
+        super().__init__(cache_path)
+        self.repo_id, self.token = repo_id, token
+
+    def _download(self) -> str:
+        from huggingface_hub import hf_hub_download
+        from huggingface_hub.errors import EntryNotFoundError
+
+        try:
+            p = hf_hub_download(self.repo_id, self.FILE, repo_type="dataset", token=self.token, force_download=True)
+        except EntryNotFoundError:
+            return ""
+        with open(p, encoding="utf-8") as f:
+            return f.read()
+
+    def _read(self) -> list[dict]:
+        out = []
+        for line in self._download().splitlines():
+            line = line.strip()
+            if line:
+                try:
+                    out.append(json.loads(line))
+                except json.JSONDecodeError:
+                    continue
+        return out
+
+    def _append(self, rec: dict) -> None:
+        from huggingface_hub import HfApi
+
+        body = self._download()
+        if body and not body.endswith("\n"):
+            body += "\n"
+        body += json.dumps(rec, ensure_ascii=False) + "\n"
+        HfApi(token=self.token).upload_file(path_or_fileobj=body.encode("utf-8"), path_in_repo=self.FILE,
+                                            repo_id=self.repo_id, repo_type="dataset",
+                                            commit_message=f"利用記録 {rec.get('status', '')}")

@@ -91,6 +91,8 @@ def paid_ai_blockers(settings, code: str | None) -> list[str]:
         reasons.append("APIキーが設定されていません（ANTHROPIC_API_KEY）。")
     if not settings.budget.usage_store_persistent:
         reasons.append("永続的な利用記録の保存先が設定されていないため、有料処理を停止しています（RP_USAGE_STORE_PERSISTENT）。")
+    if settings.budget.usage_hf_repo and not os.environ.get("RP_HF_TOKEN"):
+        reasons.append("利用記録の保存先（Hugging Face）に書き込むためのトークンがありません（RP_HF_TOKEN）。")
     codes = valid_access_codes()
     if not codes:
         reasons.append("AIパスワードが設定されていません（RP_ACCESS_CODES）。")

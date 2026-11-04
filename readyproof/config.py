@@ -83,6 +83,8 @@ class Budget:
     # 永続的な利用記録の保存先が確保されていると運用者が明示した場合のみ有料処理を許可
     usage_store_persistent: bool = False
     usage_ledger_path: str = "data/usage_ledger.jsonl"
+    # 公開サイト用：利用記録を保存する Hugging Face の非公開 dataset リポジトリ（例 user/readyproof-usage）
+    usage_hf_repo: str = ""
 
 
 @dataclass

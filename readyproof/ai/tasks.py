@@ -44,6 +44,8 @@ def execute(ai, task: str, prompt: str, schema: dict, max_tokens: int, settings,
         run_id = ledger.reserve(settings.budget, "ai", code, est["jpy"], task)
     except PermissionError as e:
         raise AIError(str(e)) from e
+    except Exception as e:  # 記録先に書けないときは実行しない（上限を守れないため）
+        raise AIError("利用記録を保存できないため、AIを実行しませんでした。時間をおいて再度お試しください。") from e
     try:
         res = ai.run(task, prompt, schema, max_tokens)
     except AIError as e:

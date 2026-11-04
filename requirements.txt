@@ -11,3 +11,5 @@ pypdf==6.21.4
 av==19.0.2
 numpy==2.5.4
 anthropic==2.4.0
+# 公開サイトの利用記録を Hugging Face の非公開データ置き場に保存する
+huggingface_hub==2.4.0
