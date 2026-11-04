@@ -100,7 +100,7 @@ def _issues_and_decision(p, m):
     with st.form("form_decision"):
         val = st.radio("判断", DECISIONS, index=DECISIONS.index(d["value"]), horizontal=True)
         c1, c2 = st.columns(2)
-        by = c1.text_input("判断者（自己申告）", value=d["by"] or state.user_name())
+        by = c1.text_input("判断者", value=d["by"] or state.user_name())
         dt = c2.date_input("日付", value=date.today())
         reason = st.text_area("理由", value=d["reason"], height=70)
         cond = st.text_area("条件（条件付き導入可の場合は必須）", value=d["conditions"], height=60)

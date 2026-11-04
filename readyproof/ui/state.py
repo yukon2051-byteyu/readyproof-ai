@@ -48,7 +48,7 @@ def set_project(p: dict, demo_initial: dict | None = None) -> None:
 
 
 def user_name() -> str:
-    return st.session_state.get("user_name", "").strip()
+    return st.session_state.get("user_name", "").strip() or "利用者"
 
 
 # 以前の画面名 → 新しい4段階の画面

@@ -40,8 +40,6 @@ if get_api_key():
 nav = st.navigation(sections)
 
 with st.sidebar:
-    st.text_input("作業者名（自己申告）", key="user_name", placeholder="例：情報システム部 田中",
-                  help="確定・確認・実施の記録に残ります。認証はないため、本人確認や正式な承認ではありません。")
     p = state.project()
     if p:
         st.download_button("作業を保存（JSON）", to_json_bytes(p), file_name=f"{p['project']['id']}_readyproof.json",
