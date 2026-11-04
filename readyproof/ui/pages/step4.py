@@ -47,7 +47,10 @@ def render():
         for t in rts:
             row(p, t, focus == t["id"])
 
-    next_button("次へ：⑤ 導入判断", "decision")
+    next_button("次へ：⑤ 導入判断", "decision", left=lambda: st.download_button(
+        "受入テスト仕様書・成績書（Excel）をダウンロード", acceptance_test_workbook(p), width="stretch",
+        file_name=f"{p['project']['id']}_受入テスト仕様書・成績書.xlsx", mime=XLSX, icon=":material/download:",
+        key="dl_t_bottom"))
 
 
 def ai_tests_box(p):

@@ -25,7 +25,7 @@ def render():
         st.success(msg + ("下の「導入確認レポート（Excel）をダウンロード」で、診断・テスト結果・判断をまとめたレポートを保存してください。"
                           if done != "未判断" else ""), icon=":material/task_alt:")
     st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
-    c1, _, c2 = st.columns([1.7, 0.7, 1.4], vertical_alignment="top")  # 2つのボタンを上揃え
+    c1, _, c2 = st.columns([2.0, 0.4, 1.4], vertical_alignment="top")  # 2つのボタンを上揃え
     c1.download_button("導入確認レポート（Excel）をダウンロード", report_workbook(p), type="primary",
                        file_name=f"{p['project']['id']}_導入確認レポート.xlsx", mime=XLSX, icon=":material/download:",
                        width="stretch")

@@ -81,9 +81,13 @@ def header(key: str, title: str, desc: str) -> dict | None:
     return p
 
 
-def next_button(label: str, page_key: str) -> None:
+def next_button(label: str, page_key: str, left=None) -> None:
+    """画面の下の「次へ」ボタン。left（関数）を渡すと、その部品を左に置いて上揃えで並べる。"""
     st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
-    _, c = st.columns([3, 1.4])
+    lc, _, c = st.columns([2.0, 0.4, 1.4], vertical_alignment="top")
+    if left:
+        with lc:
+            left()
     if c.button(label, type="primary", icon=":material/arrow_forward:", width="stretch", key=f"next_{page_key}"):
         p = state.project()
         if p:

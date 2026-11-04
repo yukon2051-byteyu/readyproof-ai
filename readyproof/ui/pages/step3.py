@@ -48,9 +48,9 @@ def render():
     section("要件ごとの診断")
     for r in reqs:
         card(p, r, focus == r["id"])
-    st.download_button("ベンダーへの質問書（Excel）をダウンロード", questionnaire_workbook(p),
-                       file_name=f"{p['project']['id']}_質問書.xlsx", mime=XLSX, icon=":material/download:")
-    next_button("次へ：④ 受入テスト", "tests")
+    next_button("次へ：④ 受入テスト", "tests", left=lambda: st.download_button(
+        "ベンダーへの質問書（Excel）をダウンロード", questionnaire_workbook(p), width="stretch",
+        file_name=f"{p['project']['id']}_質問書.xlsx", mime=XLSX, icon=":material/download:", key="dl_q_bottom"))
 
 
 def ai_box(p, reqs):
@@ -115,7 +115,12 @@ def card(p, r, focused: bool):
                     unsafe_allow_html=True)
         nq = sum(1 for q in p["questions"] if r["id"] in q.get("req_ids", []))
         ncr = sum(1 for c in p["requests"] if r["id"] in c.get("req_ids", []))
-        c1.caption(f"理由：{dg['reason']}" if dg else "まだ診断していません（上の「AIで診断する」で診断します）。")
+        if dg:
+            c1.caption(f"理由：{dg['reason']}")
+        elif r["status"] != "確定":
+            c1.caption("要件が確定していないため、診断していません（② 自社のルールで確定すると診断できます）。")
+        else:
+            c1.caption("まだ診断していません（上の「AIで診断する」で診断します）。")
         if focused:
             c2.markdown("<div style='text-align:center' class='rp-small'>下に表示中</div>", unsafe_allow_html=True)
         elif c2.button("詳しく確認する", key=f"fr_{r['id']}", width="stretch", type="primary"):
