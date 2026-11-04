@@ -103,6 +103,7 @@ def _issues_and_decision(p, m):
             try:
                 rules.record_decision(p, val, by, str(dt), reason, cond,
                                       decision_snapshot(p, M.decision_counts(m, len(issues))))
+                st.session_state["_decision_done"] = val  # 次の表示で「導入確認が完了しました」を出す
                 st.rerun()
             except rules.RuleError as e:
                 st.error(str(e))

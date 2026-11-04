@@ -160,3 +160,16 @@ def test_create_own_project_requires_ai_password(monkeypatch):
     assert create().disabled and "AIパスワードが正しくありません" in texts(at)
     at.text_input(key="home_ai_pw").input("secret-pw").run()
     assert not create().disabled
+
+
+def test_recording_decision_shows_completion_message():
+    """導入判断を記録すると、導入確認が完了したことを伝える。"""
+    from readyproof.demos.builder import build as build_screen
+
+    p = build_screen("demo3")
+    p["project"]["demo_id"] = None  # 自分の案件として
+    at = page("decision", p)
+    at.text_area[0].input("書面回答で解消し、全テストに合格した。").run()
+    next(b for b in at.button if b.label == "判断を記録").click().run()
+    assert not at.exception
+    assert any("導入確認が完了しました" in s.value for s in at.success)
