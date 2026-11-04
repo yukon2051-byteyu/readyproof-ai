@@ -78,32 +78,17 @@ def render():
 
     # ---- 3分デモ：開始 → 流れ → 成果物 ----
     section("使い方は4段階：入力2つ → 出力2つ")
-    left, right = st.columns([1.05, 1], gap="medium")
-    with left:
-        st.markdown('<div class="rp-flow">' + "".join(
-            f'<div class="st"><span class="rp-num">{i + 1}</span><div><span class="rp-small">{esc(io)}</span>　<b>{esc(t)}</b><br>'
-            f'<span class="rp-small">{esc(d)}</span></div></div>' for i, (io, t, d) in enumerate(FLOW)) + "</div>",
-            unsafe_allow_html=True)
-        if st.button("3分デモを始める（経費精算サービスの導入）", type="primary", icon=":material/play_arrow:",
-                     width="stretch", key="open_main"):
-            _open_demo("demo1")
-        st.caption("架空の会社・資料で、画面の案内に沿って約3分。料金はかかりません。")
-    with right:
-        st.markdown(
-            '<div class="rp-result"><div class="h">最終的に手に入るもの（デモ「経費精算サービスの導入」の結果）</div>'
-            '<div class="row"><span class="lb">自社の要件</span><div>10,000円以上は、上司の承認後に部長が承認する</div></div>'
-            '<div class="row"><span class="lb">出力1 診断</span><div><b class="ok">設定すれば使える見込み</b></div></div>'
-            '<div class="row"><span class="lb">根拠</span><div>ご提案資料 スライド2「承認ワークフロー」表3行目<br>'
-            '<span class="q">『10,000円以上 ｜ 承認ルート：上長 → 部長』</span></div></div>'
-            '<div class="row"><span class="lb">出力2 テスト</span><div>9,999円／10,000円の境界値テスト：<b class="ng">不合格</b>'
-            ' → 設定変更 → <b class="ok">再テスト合格</b></div></div>'
-            '<div class="foot">診断結果と受入テスト書は、Excel でダウンロードできます。</div></div>',
-            unsafe_allow_html=True)
-        st.download_button("見本：受入テスト書（Excel）をダウンロード", sample_report(),
-                           file_name="ReadyProof_サンプル_受入テスト書.xlsx", mime=XLSX, icon=":material/download:",
-                           width="stretch")
+    _grid([f'<div class="rp-card"><div class="t"><span class="rp-num">{i + 1}</span>{esc(t)}</div>'
+           f'<div class="m" style="margin-top:0;padding-top:0">{esc(io)}</div><div class="b">{esc(d)}</div></div>'
+           for i, (io, t, d) in enumerate(FLOW)])
+    c1, c2 = st.columns([2, 1.2], vertical_alignment="center")
+    if c1.button("3分デモを始める（経費精算サービスの導入）", type="primary", icon=":material/play_arrow:",
+                 width="stretch", key="open_main"):
+        _open_demo("demo1")
+    c2.download_button("見本：受入テスト書（Excel）", sample_report(), file_name="ReadyProof_サンプル_受入テスト書.xlsx",
+                       mime=XLSX, icon=":material/download:", width="stretch")
+    st.caption("架空の会社・資料で、画面の案内に沿って約3分。料金はかかりません。")
 
-    # ---- できること・役割分担 ----
     section("AI・プログラム・人の役割分担")
     _grid([f'<div class="rp-card role"><div class="t"><span class="rp-num">{esc(m)}</span>{esc(w)}：{esc(d)}</div>'
            f'<div class="b">{esc(x)}</div></div>' for m, w, d, x in ROLES])
