@@ -15,10 +15,10 @@
 ## 自社の案件でAIを使う設定（公開サイト）
 
 1. `scripts/setup_hf_ai.py <ユーザー名>`（AIパスワードは環境変数 `RP_AI_PASSWORD`）：利用記録の非公開の置き場所（dataset `<ユーザー名>/readyproof-usage`）を作り、Space の秘密情報（APIキー・AIパスワード・記録先・書き込み用トークン）を登録する。2026-11-04 に利用者が実行済み。
-2. 書き込み用トークン（`RP_HF_TOKEN`）を、権限を絞ったものに差し替える（推奨。最初の登録ではアカウント全体に書ける管理用トークンを使ったため）：
+2. 書き込み用トークン（`RP_HF_TOKEN`）を、権限を絞ったものに差し替える（最初の登録ではアカウント全体に書ける管理用トークンを使ったため）。**2026-11-05 に利用者が実行済み**。差し替え後、公開サイトでAIパスワードの確認・利用状況の表示・実行ボタンの表示を確認した：
    1. Hugging Face の Settings → Access Tokens → **Create new token** → **Fine-grained** を選ぶ
    2. 名前：`readyproof-usage-writer`
-   3. 「Repositories permissions」で `<ユーザー名>/readyproof-usage` だけを選び、**Read access** と **Write access**（contents）にチェック。ほかの権限は付けない
+   3. Presets で **Custom** を選び、「Repositories permissions」で `<ユーザー名>/readyproof-usage` だけを選んで、**Read contents** と **Write contents/settings** にチェック（Write に連動して「View access requests」も付くが、選んだリポジトリだけの権限なので問題ない）。ほかの権限は付けない
    4. 作成したトークンをコピーし、VS Code のターミナルで実行（トークンはチャットに貼らない）：
       `$env:RP_USAGE_TOKEN="（コピーしたトークン）"; .venv\Scripts\python scripts\set_usage_token.py <ユーザー名>`
    5. スクリプトは、Fine-grained でなければ中止し、新しいトークンで記録の書き込み・読み戻しを確認してから Space に登録する
