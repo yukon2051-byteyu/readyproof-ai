@@ -14,7 +14,6 @@ from ...config import APP_NAME_JA
 from ...core import new_project
 from ...demos.builder import DEMOS, build
 from ...export.excel import acceptance_test_workbook
-from ...export.jsonio import LoadError, from_json_bytes
 from .. import state
 from ..components import start_tour
 from ..theme import esc, section
@@ -93,24 +92,9 @@ def render():
 
     # ---- 自分の案件 ----
     section("自分の案件で使う")
-    t1, t2 = st.tabs(["新しい案件を作る", "保存した案件を開く"])
-    with t1:
-        c1, c2 = st.columns([3, 1], vertical_alignment="bottom")
-        name = c1.text_input("案件名", placeholder="例：勤怠管理サービスの導入", key="new_project_name")
-        if c2.button("作成する", icon=":material/add:", disabled=not name.strip(), width="stretch"):
-            state.set_project(new_project(name.strip()))
-            state.flash("新しい案件を作成しました。まず製品の情報を登録してください。")
-            state.goto("project")
-    with t2:
-        up = st.file_uploader("ReadyProof AI で保存した JSON ファイル", type=["json"], key="home_load")
-        if up is not None and st.button("開く", icon=":material/folder_open:"):
-            try:
-                p = from_json_bytes(up.getvalue())
-            except LoadError as e:
-                st.error(f"開けませんでした：{e}（今の作業はそのままです）")
-            else:
-                state.set_project(p)
-                state.flash("案件を開きました。資料・録画の元ファイルは含まれていません。")
-                state.goto("decision")
-    st.caption("公開版では、外部に送ってよい資料・録画（または匿名化した情報）だけを使ってください。"
-               "認証はなく、作業者名は自己申告です。AI に文字を送る前には、送信先と内容を必ず表示します。")
+    c1, c2 = st.columns([3, 1], vertical_alignment="bottom")
+    name = c1.text_input("案件名", placeholder="例：勤怠管理サービスの導入", key="new_project_name")
+    if c2.button("作成する", icon=":material/add:", disabled=not name.strip(), width="stretch"):
+        state.set_project(new_project(name.strip()))
+        state.flash("新しい案件を作成しました。まず製品の情報と資料を入れてください。")
+        state.goto("input1")
