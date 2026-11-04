@@ -48,7 +48,7 @@ def user_name() -> str:
 
 # 以前の画面名 → 新しい4段階の画面
 ALIASES = {"project": "input1", "sources": "input1", "requirements": "input2", "diagnosis": "result",
-           "questions": "result", "decision": "tests"}
+           "questions": "result"}
 
 
 def goto(key: str) -> None:

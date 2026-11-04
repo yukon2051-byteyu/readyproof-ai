@@ -82,6 +82,7 @@ div[class*="st-key-rpbox_"] {{ padding: 14px 18px; }}
   background: {NAVY}; color: {ACCENT}; font-size: .85rem; font-weight: 800; flex: none; }}
 .rp-card .b {{ font-size: .9rem; color: #1F2937; }}
 .rp-card .m {{ font-size: .8rem; color: {MUTED}; margin-top: auto; padding-top: 6px; }}
+.rp-card.role {{ background: #FBF3DC; border-color: #EBD9A6; border-top-color: #E0B84A; }}
 .rp-card.role .t {{ font-size: .98rem; }}
 .rp-card ul {{ margin: 0 0 0 1.1rem; padding: 0; font-size: .86rem; color: #1F2937; }}
 
@@ -126,7 +127,7 @@ div[class*="st-key-rpbox_"] {{ padding: 14px 18px; }}
 mark.rp-mark {{ background: #BFE9FC; color: inherit; padding: 0 2px; border-radius: 3px; }}
 
 /* 4段階の進み具合（①製品の資料 → ②自社のルール → ③診断結果 → ④受入テスト） */
-.rp-stepper {{ display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 4px 0 14px; }}
+.rp-stepper {{ display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin: 4px 0 14px; }}
 .rp-step {{ display: flex; gap: 10px; align-items: center; background: #fff; border: 1px solid {BORDER}; border-radius: 10px;
   padding: 9px 12px; box-shadow: 0 1px 2px rgba(20, 38, 63, .06); }}
 .rp-step .no {{ flex: none; width: 30px; height: 30px; border-radius: 50%; display: inline-flex; align-items: center;

@@ -9,7 +9,7 @@ from readyproof.demos.builder import build
 
 HARNESS = os.path.join(os.path.dirname(__file__), "ui_harness.py")
 APP = os.path.join(os.path.dirname(os.path.dirname(__file__)), "app.py")
-PAGES = ["home", "input1", "input2", "result", "tests", "data", "settings"]
+PAGES = ["home", "input1", "input2", "result", "tests", "decision", "settings"]
 
 
 def page(name, project=None, **state):
@@ -77,11 +77,15 @@ def test_pass_without_confirmed_expected_blocked_in_ui():
     assert not [r for r in at.session_state["project"]["runs"] if r["test_id"] == "T-002"]
 
 
-def test_invalid_json_load_keeps_current_project():
-    p = build("demo1")
-    at = page("data", p)
+def test_sidebar_save_and_open_available():
+    """保存（JSON）と、保存した作業を開く欄はサイドバーにある。保存・Excel出力の画面はナビゲーションにない。"""
+    at = AppTest.from_file(APP, default_timeout=120)
+    at.session_state["project"] = build("demo1")
+    at.run()
     assert not at.exception
-    # 読込処理そのものは test_export_demos で検証。ここでは現在の案件が保持されていることを確認
+    labels = [b.label for b in at.sidebar.get("download_button")]
+    assert "作業を保存（JSON）" in labels
+    # 不正なJSONの読込で現在の作業を失わないことは test_export_demos で検証
     assert at.session_state["project"]["project"]["demo_id"] == "demo1"
 
 

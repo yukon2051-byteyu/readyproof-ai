@@ -9,7 +9,8 @@ import streamlit as st
 from readyproof.ai.client import get_api_key
 from readyproof.config import APP_NAME_EN
 from readyproof.ui import state
-from readyproof.ui.pages import data_page, home, settings_page, step1, step2, step3, step4
+from readyproof.export.jsonio import LoadError, from_json_bytes, to_json_bytes
+from readyproof.ui.pages import home, settings_page, step1, step2, step3, step4, step5
 from readyproof.ui.theme import inject_css
 
 st.set_page_config(page_title=APP_NAME_EN, page_icon=":material/fact_check:", layout="wide",
@@ -25,24 +26,34 @@ pages = {
     "input2": P(step2.render, title="② 自社のルール", icon=":material/rule:", url_path="rules"),
     "result": P(step3.render, title="③ 診断結果", icon=":material/fact_check:", url_path="result"),
     "tests": P(step4.render, title="④ 受入テスト", icon=":material/task_alt:", url_path="tests"),
-    "data": P(data_page.render, title="保存・Excel出力", icon=":material/save:", url_path="data"),
+    "decision": P(step5.render, title="⑤ 導入判断", icon=":material/gavel:", url_path="decision"),
     "settings": P(settings_page.render, title="設定・利用枠", icon=":material/tune:", url_path="settings"),
 }
 state.PAGES.update(pages)
 
-nav = st.navigation({
-    "": [pages["home"]],
-    "導入確認の流れ": [pages[k] for k in ("input1", "input2", "result", "tests")],
-    # 設定・利用枠は運用者向け（有料AIを使う場合だけ必要）。APIキーがない公開版では表示しない
-    "管理": [pages["data"]] + ([pages["settings"]] if get_api_key() else []),
-})
+sections = {"": [pages["home"]],
+            "導入確認の流れ": [pages[k] for k in ("input1", "input2", "result", "tests", "decision")]}
+# 設定・利用枠は運用者向け（有料AIを使う場合だけ必要）。APIキーがない公開版では表示しない
+if get_api_key():
+    sections["管理"] = [pages["settings"]]
+nav = st.navigation(sections)
 
 with st.sidebar:
     st.text_input("作業者名（自己申告）", key="user_name", placeholder="例：情報システム部 田中",
                   help="確定・確認・実施の記録に残ります。認証はないため、本人確認や正式な承認ではありません。")
     p = state.project()
     if p:
-        st.caption("編集内容はこの画面を開いている間だけ保持されます。続きから使うときは「保存・Excel出力」で保存してください。")
+        st.download_button("作業を保存（JSON）", to_json_bytes(p), file_name=f"{p['project']['id']}_readyproof.json",
+                           mime="application/json", icon=":material/save:", width="stretch",
+                           help="画面を閉じると作業は消えます。続きから使うときは、この保存ファイルを下で開きます。")
+    up = st.file_uploader("保存した作業を開く", type=["json"], key="sb_load")
+    if up is not None and st.button("開く", key="sb_open", width="stretch"):
+        try:
+            state.set_project(from_json_bytes(up.getvalue()))
+            state.flash("保存した作業を開きました。")
+            state.goto("input1")
+        except LoadError as e:
+            st.error(f"開けませんでした：{e}（今の作業はそのままです）")
 
 state.show_flash()
 nav.run()

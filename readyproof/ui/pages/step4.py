@@ -3,15 +3,14 @@ from __future__ import annotations
 
 import streamlit as st
 
-from ...export.excel import acceptance_test_workbook, report_workbook
+from ...export.excel import acceptance_test_workbook
 from ...logic import metrics as M
 from ...logic import rules
 from ...logic.stale import run_stale_reasons, test_stale_reasons
-from ...testgen import draft_tests
 from .. import state
 from ..layout import header, next_button
 from ..theme import RESULT_TONE, badge, box, chip, esc, section, tiles
-from . import decision, tests
+from . import tests
 
 XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
@@ -30,23 +29,9 @@ def render():
         {"label": "まだ試していない", "value": f"{len(m['not_run'])}件", "color": "#5B6574"},
         {"label": "試せなかった", "value": f"{len(m['blocked'])}件", "note": "合否には数えない", "color": "#B45309"},
     ])
-    c1, c2, c3 = st.columns([1.3, 1.3, 1])
-    c1.download_button("受入テスト仕様書（Excel）をダウンロード", acceptance_test_workbook(p), type="primary",
-                       file_name=f"{p['project']['id']}_受入テスト仕様書.xlsx", mime=XLSX, icon=":material/download:",
-                       width="stretch")
-    if c2.button("確定した要件からテスト仕様を作る（AIなし）", icon=":material/playlist_add:", width="stretch"):
-        made = draft_tests(p)
-        state.flash(f"{len(made)}件のテスト仕様を作りました（下書き）。画面の場所を製品で確かめ、期待結果を確認してから確定してください。"
-                    if made else "新しく作るテストはありません（確定した要件には、すでにテストがあります）。")
-        st.rerun()
-    c3.download_button("導入確認レポート", report_workbook(p), file_name=f"{p['project']['id']}_導入確認レポート.xlsx",
-                       mime=XLSX, icon=":material/description:", width="stretch")
-    if not p["project"].get("demo_id") and st.toggle("AIでテスト仕様を作る", key="show_ai_tests"):
-        with box():
-            reqs = [r for r in p["requirements"] if r["status"] == "確定"]
-            if reqs:
-                st.session_state.test_filter_req = st.selectbox("対象の要件", [r["id"] for r in reqs], key="ai_t_req")
-                tests.ai_gen(p, reqs, st.session_state.test_filter_req)
+    st.download_button("受入テスト仕様書（Excel）をダウンロード", acceptance_test_workbook(p), type="primary",
+                       file_name=f"{p['project']['id']}_受入テスト仕様書.xlsx", mime=XLSX, icon=":material/download:")
+    ai_tests_box(p)
 
     focus = st.session_state.get("sel_test")
     for req in [r for r in p["requirements"] if r["status"] != "廃止"]:
@@ -57,10 +42,47 @@ def render():
         for t in rts:
             row(p, t, focus == t["id"])
 
-    section("残った問題と導入判断")
-    decision.decision_section(p, show_stats=False)
-    if p["project"].get("demo_id"):
-        next_button("デモはここまでです。ホームへ（ほかのデモを見る）", "home")
+    next_button("次へ：⑤ 導入判断", "decision")
+
+
+def ai_tests_box(p):
+    """テスト仕様は常にAIで作る。テストがない要件があれば実行欄を表示、なければ「追加で作る」だけ表示。"""
+    s = state.settings()
+    confirmed = [r for r in p["requirements"] if r["status"] == "確定"]
+    if not confirmed:
+        st.caption("確定した要件がありません。② 自社のルールで要件を確定すると、テスト仕様を作れます。")
+        return
+    notest = [r["id"] for r in confirmed
+              if not any(r["id"] in t["req_ids"] and t["status"] != "廃止" for t in p["tests"])]
+    if notest:
+        _ai_tests(p, s, confirmed, notest, f"AIでテスト仕様を作る（テストがない要件 {len(notest)}件）", "AIでテスト仕様を作る")
+    elif st.session_state.get("more_tests"):
+        _ai_tests(p, s, confirmed, [], "AIでテスト仕様を追加で作る", "AIでテスト仕様を追加で作る")
+    elif st.button("AIでテスト仕様を追加で作る", icon=":material/playlist_add:", key="more_tests_open"):
+        st.session_state.more_tests = True
+        st.rerun()
+
+
+def _ai_tests(p, s, confirmed, default, title, label):
+    from ...ai.tasks import build_tests_input, run_tests_multi
+    from ..components import ai_panel, run_ai
+
+    with box():
+        section(title)
+        st.caption("作ったテストは下書きです。人が手順と期待結果を確認して確定します。すでにあるテストは上書きしません。")
+        ids = [r["id"] for r in confirmed]
+        lim = s.limits.max_requirements_per_diagnosis
+        sel = st.multiselect(f"対象の要件（確定済み・1回最大{lim}件・テストは合計最大{s.limits.max_tests_per_generation}件）",
+                             ids, default=default[:lim], max_selections=lim, key=f"form_ai_tests_{label}")
+        if sel:
+            client = ai_panel(f"tests_{label}", f"{len(sel)}件の要件のテスト仕様", build_tests_input(p, sel), 16000,
+                              ["要件・診断の要点・受入条件"], button_label=label)
+            if client:
+                run_ai(lambda: run_tests_multi(p, sel, client, s, state.ledger(), st.session_state.get("access_code", "")),
+                       "{n}件のテスト仕様（下書き）を作りました。手順と期待結果を確認して確定してください。")
+        if not default and st.button("追加で作らない", key="more_tests_close", type="tertiary"):
+            st.session_state.more_tests = False
+            st.rerun()
 
 
 def row(p, t, opened: bool):

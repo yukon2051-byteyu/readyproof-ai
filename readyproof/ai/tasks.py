@@ -12,7 +12,7 @@ from ..logic.evidence import evidence_label, norm
 from ..media.subtitles import fmt_ts
 from ..search import candidates, with_context
 from .client import AIError, AIResult
-from .prompts import DIAG_SCHEMA, REQUEST_SCHEMA, SPLIT_SCHEMA, TEST_SCHEMA, data_block
+from .prompts import DIAG_SCHEMA, REQUEST_SCHEMA, SPLIT_SCHEMA, TEST_MULTI_SCHEMA, TEST_SCHEMA, data_block
 
 
 # ---------------- 見積 ----------------
@@ -258,6 +258,47 @@ def run_tests(project: dict, req_id: str, ai, settings, request_id=None, ledger=
     prompt = build_test_input(project, req_id, request_id)
     res = execute(ai, "generate_tests", prompt, TEST_SCHEMA, 12000, settings, ledger, code)
     return apply_tests(project, req_id, res.data, request_id, "AI生成", settings.limits.max_tests_per_generation)
+
+
+def build_tests_input(project: dict, req_ids: list[str]) -> str:
+    """複数の要件のテスト仕様をまとめて作るための入力。要件・診断・依頼書の受入条件を渡す。"""
+    from ..core import primary_product
+
+    prod = primary_product(project) or {}
+    blocks = []
+    for rid in req_ids:
+        req = find(project, "requirements", rid)
+        if not req:
+            continue
+        dg = rules.current_diagnosis(project, rid)
+        acc = [c["acceptance_criteria"] for c in project["requests"] if rid in c.get("req_ids", []) and c.get("acceptance_criteria")]
+        blocks.append(json.dumps({"req_id": rid, "version": req["version"], "business": req["business"],
+                                  "workflow": req["workflow"], "role": req["role"], "rules": req["rules"],
+                                  "exceptions": req["exceptions"], "inputs": req["inputs"], "outputs": req["outputs"],
+                                  "priority": req["priority"],
+                                  "diagnosis": {k: dg.get(k) for k in ("category", "met_conditions", "remaining_conditions",
+                                                                       "plan_conditions")} if dg else None,
+                                  "acceptance_criteria": acc}, ensure_ascii=False))
+    return ("次の自社の要件について、受入テスト仕様（そのまま実施できる完成度）を作成してください。"
+            "要件ごとに、通常操作・例外・境界値（金額の境目・上限件数・期限など）・権限・承認/差し戻し・設定/改修箇所・"
+            "関連する既存動作の再確認から、要件に根拠のある観点をすべて選び、各テストに req_id・事前条件・具体的なテストデータ・"
+            "番号付き手順・確認できる期待結果・合否判定基準・根拠を書いてください。画面名・ボタン名・設定方法が資料にない場合は、"
+            "業務の操作として書き、存在しない画面を作らないでください。" + chr(10) * 2
+            + f"対象製品：{prod.get('name', '未登録')}（版：{prod.get('edition') or '未記入'}／プラン：{prod.get('plan') or '未記入'}）"
+            + chr(10) * 2 + data_block("自社の要件と診断", chr(10).join(blocks)))
+
+
+def run_tests_multi(project: dict, req_ids: list[str], ai, settings, ledger=None, code: str = "") -> list[dict]:
+    """確定した要件のテスト仕様をAIでまとめて作る（下書き）。既存のテストは上書きしない。"""
+    prompt = build_tests_input(project, req_ids)
+    res = execute(ai, "generate_tests", prompt, TEST_MULTI_SCHEMA, 16000, settings, ledger, code)
+    out = []
+    for item in res.data.get("tests", [])[: settings.limits.max_tests_per_generation]:
+        rid = item.pop("req_id", "")
+        if rid not in req_ids:
+            continue
+        out.append(rules.add_test(project, {**item, "req_ids": [rid], "expected_confirmed": False}, origin="AI生成"))
+    return out
 
 
 def run_split(project: dict, text: str, ai, settings, ledger=None, code: str = "") -> list[dict]:

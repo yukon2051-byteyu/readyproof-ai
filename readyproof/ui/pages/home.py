@@ -57,7 +57,7 @@ def render():
         f'<div class="rp-hero">{MOTIF}<div class="inner"><div class="eyebrow">{esc(APP_NAME_JA)}</div>'
         '<div class="name">ReadyProof <span>AI</span></div>'
         '<div class="tag"><em>「うちの会社で使える？」</em>に答える<em>AI</em></div>'
-        '<div class="desc">製品の情報と自社の業務ルールを照合し、導入判断・受入テストまでつなげます。</div>'
+        '<div class="desc">製品の情報と自社の業務ルールを照合し、受入テスト・導入判断までつなげます。</div>'
         '</div></div>', unsafe_allow_html=True)
 
     section("AIと人の役割分担", top="-7px")  # 上の余白を0.7cm詰める

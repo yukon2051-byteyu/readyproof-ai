@@ -165,3 +165,23 @@ def test_cost_estimate_includes_retry(settings):
     e = estimate_cost_jpy(10000, 16000, settings.budget, retries=1)
     one = estimate_cost_jpy(10000, 16000, settings.budget, retries=0)
     assert e["jpy"] == pytest.approx(one["jpy"] * 2, rel=0.01)
+
+
+def test_multi_requirement_test_specs(project, settings):
+    r1 = confirmed_req(project)
+    r2 = confirmed_req(project, business="自己承認", rules="自己承認は禁止")
+    t0 = rules.add_test(project, {"req_ids": [r1["id"]], "title": "既存", "expected": "x", "expected_confirmed": True})
+    rules.confirm_test(project, t0, "確認者")
+    item = {"title": "t", "purpose": "", "viewpoint": "境界値", "role": "", "preconditions": "検証環境", "inputs": "",
+            "test_data": "9,999円", "steps": "1. 申請する", "expected": "上長のみ", "pass_criteria": "期待どおりなら合格",
+            "expected_basis": "", "importance": "高", "importance_reason": "", "open_issues": ""}
+    data = {"tests": [{"req_id": r1["id"], **item}] * 10 + [{"req_id": r2["id"], **item}] * 10
+            + [{"req_id": "REQ-999", **item}]}
+    from readyproof.ai.tasks import build_tests_input, run_tests_multi
+
+    assert r1["rules"] in build_tests_input(project, [r1["id"], r2["id"]])
+    made = run_tests_multi(project, [r1["id"], r2["id"]], FakeAI({"generate_tests": data}), settings)
+    assert len(made) == settings.limits.max_tests_per_generation
+    assert all(t["status"] == "下書き" and t["test_data"] == "9,999円" and t["pass_criteria"] for t in made)
+    assert all(t["req_ids"][0] in (r1["id"], r2["id"]) for t in made)
+    assert project["tests"][0]["title"] == "既存" and project["tests"][0]["status"] == "確定"

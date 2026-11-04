@@ -71,7 +71,7 @@ REQUEST_SCHEMA = _obj({
     "evidence": _arr(_obj({"ref": _s(), "quote": _s()})),
 })
 
-TEST_SCHEMA = _obj({"tests": _arr(_obj({
+TEST_ITEM_PROPS = {
     "title": _s(), "purpose": _s(), "viewpoint": {"type": "string", "enum": TEST_VIEWPOINTS},
     "role": _s("操作する役割"), "preconditions": _s("検証環境・テスト用アカウント・必要な設定"), "inputs": _s(),
     "test_data": _s("具体的なテストデータ（金額・件数・日付などの値）"),
@@ -80,7 +80,10 @@ TEST_SCHEMA = _obj({"tests": _arr(_obj({
     "expected_basis": _s("期待結果の根拠（要件・受入条件）"),
     "importance": {"type": "string", "enum": TEST_IMPORTANCE}, "importance_reason": _s(),
     "open_issues": _s("未確定事項"),
-}))})
+}
+TEST_SCHEMA = _obj({"tests": _arr(_obj(TEST_ITEM_PROPS))})
+# 複数の要件をまとめて1回で作る（AIの利用回数と費用を抑える）
+TEST_MULTI_SCHEMA = _obj({"tests": _arr(_obj({"req_id": _s("対象の要件ID"), **TEST_ITEM_PROPS}))})
 
 
 def data_block(title: str, body: str) -> str:

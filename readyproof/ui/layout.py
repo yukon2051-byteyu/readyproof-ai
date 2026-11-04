@@ -13,6 +13,7 @@ STEPS = [
     ("input2", "自社のルール", "入力2"),
     ("result", "診断結果", "出力1"),
     ("tests", "受入テスト", "出力2"),
+    ("decision", "導入判断", "判断"),
 ]
 
 
@@ -27,6 +28,7 @@ def _counts(p: dict) -> dict:
         "input2": (len(reqs), f"要件 {len(reqs)}件（確定 {sum(1 for r in reqs if r['status'] == '確定')}）"),
         "result": (diag, f"診断 {diag}/{len(reqs)}件"),
         "tests": (len(tests), f"テスト {len(tests)}件（実施 {done}）"),
+        "decision": (0 if p["decision"]["value"] == "未判断" else 1, f"判断：{p['decision']['value']}"),
     }
 
 
