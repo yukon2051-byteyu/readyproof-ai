@@ -11,7 +11,7 @@ from ...logic.stale import diagnosis_stale_reasons
 from ...media.subtitles import fmt_ts
 from .. import evidence_picker, state
 from ..components import (ai_panel, context_bar, evidence_view, name_required, page_title, run_ai, validity_note)
-from ..theme import category_chip, chip, esc, review_chip, section
+from ..theme import category_chip, chip, esc, review_chip, section, box
 
 
 def render():
@@ -112,7 +112,7 @@ def detail(p, r):
     if not dg["evidence"]:
         st.caption("根拠がありません（記載・発言がないことは「対応不可」ではありません）。")
     for i, ev in enumerate(dg["evidence"]):
-        with st.container(border=True):
+        with box():
             evidence_view(p, ev, pid, i)
             if st.button("この根拠を外す", key=f"rm_ev_{dg['id']}_{i}"):
                 dg["evidence"].pop(i)
@@ -140,7 +140,7 @@ def detail(p, r):
                 rules.check_diagnosis(p, dg)
                 st.rerun()
 
-    with st.container(border=True):
+    with box():
         section("人が確認する")
         c1, c2 = st.columns([2, 1])
         cat = c1.selectbox("診断区分", DIAG_CATEGORIES, index=DIAG_CATEGORIES.index(dg["category"]),

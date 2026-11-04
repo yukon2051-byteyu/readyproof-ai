@@ -8,7 +8,7 @@ from ..ai.tasks import estimate_cost_jpy
 from ..core import primary_product
 from ..logic.evidence import VALIDITY_NOTE, evidence_label, validate_evidence
 from . import state
-from .theme import badge, chip, esc
+from .theme import badge, chip, esc, box
 
 STEPS = {"sources": "ステップ1", "requirements": "ステップ2", "diagnosis": "ステップ3", "questions": "ステップ4",
          "tests": "ステップ5", "decision": "ステップ6"}
@@ -81,15 +81,16 @@ def tour_bar(current: str) -> None:
                 st.rerun()
             return
         s = steps[i]
-        st.markdown(badge(f"ガイド付きデモ {i + 1}/{len(steps)}", "blue", "explore") + f" **{s['title']}**")
-        st.markdown(chr(10).join(f"- {x}" for x in s["points"]))
-        c1, c2, c3, _ = st.columns([0.8, 1.6, 1, 2])
-        if c1.button("前へ", key="tour_prev", disabled=i == 0, icon=":material/arrow_back:"):
+        left, right = st.columns([5, 2], vertical_alignment="center")
+        left.markdown(badge(f"デモ {i + 1}/{len(steps)}", "blue", "explore") + f" **{s['title']}**")
+        left.markdown("<div class='rp-small'>" + "<br>".join(esc(x) for x in s["points"]) + "</div>",
+                      unsafe_allow_html=True)
+        b1, b2 = right.columns(2)
+        if b1.button("前へ", key="tour_prev", disabled=i == 0, width="stretch"):
             go_step(i - 1)
-        nxt = "最後のまとめへ" if i == len(steps) - 1 else "次へ"
-        if c2.button(nxt, key="tour_next", type="primary", icon=":material/arrow_forward:"):
+        if b2.button("まとめへ" if i == len(steps) - 1 else "次へ", key="tour_next", type="primary", width="stretch"):
             go_step(i + 1)
-        if c3.button("ガイドを閉じる", key="tour_close", type="tertiary"):
+        if right.button("ガイドを閉じる", key="tour_close", type="tertiary", width="stretch"):
             st.session_state.pop("tour", None)
             st.rerun()
 
@@ -156,7 +157,7 @@ def ai_panel(key: str, task_label: str, preview_text: str, max_tokens: int, deta
     デモ案件では有料処理を使わない。送信先・対象・費用見込みを事前に表示する。
     """
     s = state.settings()
-    with st.container(border=True):
+    with box():
         st.markdown(f"**AIで下書きを作る：{task_label}**")
         if state.is_demo():
             st.info("デモでは有料のAI処理を使いません（表示中の結果は「準備済みのデモ結果」です）。新しい案件で利用できます。")

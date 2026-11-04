@@ -13,7 +13,7 @@ from ...media.probe import MediaError, extract_audio_wav, probe_media
 from ...media.subtitles import fmt_ts, parse_transcript
 from ...media.transcribe import ENGINES, local_whisper_available, transcribe_local
 from .. import state
-from ..theme import chip, esc, section
+from ..theme import chip, esc, section, box
 
 MEASURED = "実測：開発PC（Windows・CPU）で small モデル、40秒の音声に約39秒（モデル読込を含む）。公開環境（最大2コア）では遅くなる見込み。"
 
@@ -53,7 +53,7 @@ def register(p):
     st.caption("アップロードしただけでは処理を始めません。内容・範囲・処理方法を確認してから実行します。")
     ok, why = local_whisper_available()
     eng = ENGINES["local_whisper"]
-    with st.container(border=True):
+    with box():
         up = st.file_uploader(f"録画ファイル（最大{lim.max_media_mb}MB・{lim.max_media_minutes}分）",
                               type=["mp4", "webm", "mov", "m4a", "mp3", "wav"], key="rec_file")
         if state.is_demo() and p["project"].get("demo_id") == "demo3":
@@ -151,7 +151,7 @@ def register(p):
                         st.rerun()
 
     section("代替：会議ツールの文字起こし・SRT・VTT・時刻付き文章を読み込む")
-    with st.container(border=True):
+    with box():
         tf = st.file_uploader("文字起こしファイル（.vtt / .srt / .txt）", type=["vtt", "srt", "txt"], key="tr_file")
         pasted = st.text_area("または時刻付きの文章を貼り付け（例：00:01:23 鈴木: 発言）", key="tr_paste", height=90)
         meta2 = _meta_inputs("tr")

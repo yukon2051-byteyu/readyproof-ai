@@ -38,7 +38,7 @@ def test_home_shows_tagline_and_demos():
     at = AppTest.from_file(APP, default_timeout=120).run()
     t = texts(at)
     assert TAGLINE.replace("「", "").split("」")[0][:8] in t.replace("「", "")
-    assert "ReadyProof AI" in t and "AI受入テスト・導入確認支援システム" in t
+    assert "ReadyProof" in t and "AI受入テスト・導入確認支援システム" in t
     assert [b.label for b in at.button].count("このデモを始める") == 3
 
 

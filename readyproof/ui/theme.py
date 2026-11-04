@@ -16,6 +16,8 @@ import html
 import streamlit as st
 
 NAVY = "#14263F"
+ACCENT = "#38BDF8"  # ブランドの差し色（明るい空色）。見出し帯・見出しの縦線・番号に使う
+PAGE_BG = "#EEF2F7"
 PRIMARY = "#1F4E8C"
 MUTED = "#5B6574"
 BORDER = "#DDE3EA"
@@ -44,11 +46,19 @@ CSS = f"""
 [data-testid="stMainBlockContainer"] {{ padding-top: 1.75rem; padding-bottom: 3rem; max-width: 1240px; }}
 [data-testid="stHeader"] {{ background: transparent; height: 2.5rem; }}
 
+/* 背景（薄い灰色）と枠の中（白）を分ける */
+[data-testid="stApp"] {{ background: {PAGE_BG}; }}
+[data-testid="stSidebar"] {{ background: #FFFFFF; border-right: 1px solid {BORDER}; }}
+div[class*="st-key-rpbox_"], [data-testid="stForm"], [data-testid="stExpander"] details {{
+  background: #FFFFFF; border-color: {BORDER} !important; box-shadow: 0 1px 2px rgba(20, 38, 63, .06); }}
+div[class*="st-key-rpbox_"] {{ padding: 2px 4px; }}
+
 /* 画面の見出し（3段階：画面名 1.55rem／小見出し 1.05rem／本文） */
 .rp-ctx {{ font-size: .82rem; color: {MUTED}; margin: 0 0 .1rem; }}
 .rp-title {{ font-size: 1.55rem; font-weight: 700; color: {NAVY}; line-height: 1.35; margin: 0; }}
 .rp-desc {{ font-size: .9rem; color: {MUTED}; margin: .15rem 0 1rem; }}
-.rp-h {{ font-size: 1.05rem; font-weight: 700; color: {NAVY}; margin: 1.1rem 0 .4rem; }}
+.rp-h {{ font-size: 1.05rem; font-weight: 700; color: {NAVY}; margin: 1.3rem 0 .5rem; padding-left: 10px;
+  border-left: 4px solid {ACCENT}; line-height: 1.3; }}
 .rp-small {{ font-size: .84rem; color: {MUTED}; }}
 .rp-quote {{ border-left: 3px solid #C9D3E0; background: #F7F9FC; padding: 4px 10px; margin: 4px 0 8px;
   white-space: pre-wrap; word-break: break-word; }}
@@ -57,6 +67,7 @@ CSS = f"""
 .rp-grid {{ display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); gap: 12px;
   align-items: stretch; margin: .2rem 0 1rem; }}
 .rp-tile {{ border: 1px solid {BORDER}; border-radius: 8px; padding: 12px 14px; background: #fff;
+  box-shadow: 0 1px 2px rgba(20, 38, 63, .06);
   display: flex; flex-direction: column; }}
 .rp-tile .lb {{ font-size: .82rem; color: {MUTED}; min-height: 2.6em; }}
 .rp-tile .v {{ font-size: 1.55rem; font-weight: 700; color: {NAVY}; line-height: 1.25; padding-top: 4px; }}
@@ -64,29 +75,50 @@ CSS = f"""
 .rp-tile.alert {{ border-color: #E9B4B4; }}
 .rp-tile.alert .v {{ color: #B42318; }}
 .rp-card {{ border: 1px solid {BORDER}; border-radius: 10px; padding: 16px 18px; background: #fff;
+  box-shadow: 0 1px 3px rgba(20, 38, 63, .08); border-top: 3px solid {ACCENT};
   display: flex; flex-direction: column; gap: 6px; }}
-.rp-card .t {{ font-size: 1.05rem; font-weight: 700; color: {NAVY}; }}
+.rp-card .t {{ font-size: 1.05rem; font-weight: 700; color: {NAVY}; display: flex; align-items: center; gap: 8px; }}
+.rp-num {{ display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%;
+  background: {NAVY}; color: {ACCENT}; font-size: .85rem; font-weight: 800; flex: none; }}
 .rp-card .b {{ font-size: .9rem; color: #1F2937; }}
 .rp-card .m {{ font-size: .8rem; color: {MUTED}; margin-top: auto; padding-top: 6px; }}
+.rp-card.role .t {{ font-size: .98rem; }}
 .rp-card ul {{ margin: 0 0 0 1.1rem; padding: 0; font-size: .86rem; color: #1F2937; }}
 
-/* トップページの見出し帯 */
-.rp-hero {{ background: {NAVY}; border-radius: 12px; padding: 26px 30px 24px; margin: 0 0 18px; }}
-.rp-hero .eyebrow {{ font-size: .9rem; color: #B9C7DA; font-weight: 500; letter-spacing: .03em; }}
-.rp-hero .name {{ font-size: 2.6rem; font-weight: 800; color: #fff; line-height: 1.15; margin: 4px 0 10px; }}
+/* トップページの見出し帯（紺のグラデーション＋右側に「根拠を確かめる書類」のモチーフ） */
+.rp-hero {{ position: relative; overflow: hidden; border-radius: 14px; padding: 28px 32px 26px; margin: 0 0 18px;
+  background: linear-gradient(120deg, {NAVY} 0%, #1B3A63 55%, #1F4E8C 100%); }}
+.rp-hero .motif {{ position: absolute; right: 26px; top: 50%; transform: translateY(-50%); width: 190px; height: 190px;
+  opacity: .9; pointer-events: none; }}
+.rp-hero .inner {{ position: relative; max-width: 78%; }}
+.rp-hero .eyebrow {{ display: inline-block; font-size: .82rem; color: {NAVY}; background: {ACCENT}; font-weight: 700;
+  padding: 2px 10px; border-radius: 999px; letter-spacing: .03em; }}
+.rp-hero .name {{ font-size: 2.7rem; font-weight: 800; color: #fff; line-height: 1.15; margin: 10px 0 10px; }}
+.rp-hero .name span {{ color: {ACCENT}; }}
 .rp-hero .tag {{ font-size: 1.3rem; font-weight: 700; color: #fff; line-height: 1.5; }}
+.rp-hero .tag em {{ font-style: normal; color: {ACCENT}; }}
 .rp-hero .desc {{ font-size: .95rem; color: #DCE4EE; margin-top: 6px; }}
 
 /* ガイド付きデモの帯 */
-.st-key-tour {{ background: #F1F5FB; border: 1px solid #B9C7DA; border-radius: 10px; padding: 10px 14px 4px; }}
+.st-key-tour {{ background: #FFFFFF; border: 1px solid {BORDER}; border-left: 5px solid {ACCENT}; border-radius: 10px;
+  padding: 10px 14px 8px; margin-bottom: 6px; box-shadow: 0 1px 3px rgba(20, 38, 63, .08); }}
 
-@media (max-width: 800px) {{ .rp-grid {{ grid-template-columns: 1fr; }} .rp-hero .name {{ font-size: 2rem; }} }}
+@media (max-width: 800px) {{ .rp-grid {{ grid-template-columns: 1fr; }} .rp-hero .name {{ font-size: 2rem; }}
+  .rp-hero .motif {{ display: none; }} .rp-hero .inner {{ max-width: 100%; }} }}
 </style>
 """
 
 
 def inject_css() -> None:
+    st.session_state["_box_n"] = 0  # 枠の通し番号を実行ごとに振り直す
     st.markdown(CSS, unsafe_allow_html=True)
+
+
+def box():
+    """白い枠（背景の灰色と区別する）。st.container(border=True) の代わりに使う。"""
+    n = st.session_state.get("_box_n", 0) + 1
+    st.session_state["_box_n"] = n
+    return st.container(border=True, key=f"rpbox_{n}")
 
 
 def esc(text) -> str:

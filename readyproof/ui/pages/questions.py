@@ -13,7 +13,7 @@ from ...logic import rules
 from ...logic.evidence import evidence_label
 from .. import evidence_picker, state
 from ..components import ai_panel, context_bar, evidence_view, name_required, page_title, run_ai
-from ..theme import REQUEST_TONE, chip, esc, section
+from ..theme import REQUEST_TONE, chip, esc, section, box
 
 VIEWS = ["質問", "対応方法", "依頼書"]
 XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -108,7 +108,7 @@ def question_detail(p, q):
                 st.error(str(e))
         st.caption("このアプリはメールを送信しません。実際に送付した後で記録してください。")
     if q["status"] in ("送付済み", "確定", "回答あり"):
-        with st.container(border=True):
+        with box():
             section("回答を記録する")
             src = st.radio("回答元", ["手動入力", "資料", "確認済み営業発言"], horizontal=True, key=f"form_as_{q['id']}")
             text = st.text_area("回答本文（受け取った内容をそのまま）", value=q.get("answer_text", ""), key=f"form_at_{q['id']}")
@@ -178,7 +178,7 @@ def actions(p):
                "合意済み仕様か追加要望かを区別してください。見送りにしても適合・合格にはなりません。")
     acts = [a for a in p["actions"] if a["req_id"] == rid]
     for a in acts:
-        with st.container(border=True):
+        with box():
             tone = {"採用": "ok", "不採用": "muted", "候補": "info"}[a["status"]]
             st.markdown(f"{chip(a['status'], tone)}{chip(a['type'], 'info')}<b>{esc(a['id'])}</b> "
                         f"<span class='rp-small'>{esc(a['origin'])}</span><div>{esc(a['reason'])}</div>"
@@ -307,7 +307,7 @@ def request_detail(p, c):
         st.caption("関連要件：" + "、".join(c["req_ids"]) + "／関連テスト：" + ("、".join(c.get("test_ids", [])) or "なし")
                    + "／関連実施：" + ("、".join(c.get("run_ids", [])) or "なし"))
 
-    with st.container(border=True):
+    with box():
         section("状態を記録する"); st.caption("送付・回答など外部の出来事は、人が記録したときだけ反映します")
         c1, c2 = st.columns([1, 2])
         new = c1.selectbox("次の状態", [x for x in REQUEST_STATUS if x != c["status"]], key=f"form_crs_{c['id']}")

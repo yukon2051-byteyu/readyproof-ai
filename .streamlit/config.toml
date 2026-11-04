@@ -3,7 +3,8 @@ base = "light"
 # 色は役割を固定（docs/design_research.md）
 primaryColor = "#1F4E8C"
 backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#F4F6F9"
+secondaryBackgroundColor = "#F7F9FC"
+showWidgetBorder = true
 textColor = "#1F2937"
 borderColor = "#DDE3EA"
 linkColor = "#1F4E8C"
@@ -20,7 +21,8 @@ headingFontSizes = ["1.55rem", "1.3rem", "1.05rem", "1rem", "0.95rem", "0.9rem"]
 baseRadius = "0.5rem"
 
 [theme.sidebar]
-backgroundColor = "#F4F6F9"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F4F6F9"
 
 [client]
 # 右上の開発者向けメニューを最小限にする

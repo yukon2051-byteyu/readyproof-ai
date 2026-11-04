@@ -11,7 +11,7 @@ from ...ingest import IngestError, ingest_bytes, ingest_text
 from ...logic import rules
 from .. import state
 from ..components import context_bar, page_title
-from ..theme import chip, esc
+from ..theme import chip, esc, box
 from . import recordings_view
 
 VIEWS = ["資料を登録", "資料の確認", "録画を登録", "発言の確認"]
@@ -44,7 +44,7 @@ def render():
 def register(p):
     s = state.settings()
     lim = s.limits
-    with st.container(border=True):
+    with box():
         c1, c2, c3 = st.columns([1, 1, 2])
         owner = c1.radio("資料の区分", ["製品", "自社"], horizontal=True,
                          format_func=lambda x: "製品の資料" if x == "製品" else "自社の手順書・規程",
@@ -106,37 +106,19 @@ def review(p):
         st.info("資料がまだありません。「資料を登録」から読み込んでください。")
         return
     opts = {f"{x['id']} 第{x['version']}版：{x['name']}（{x['owner']}・{x['status']}）": i for i, x in enumerate(p["sources"])}
-    key = st.selectbox("確認する資料", list(opts.keys()), key="sel_src")
+    c1, c2 = st.columns([3, 2])
+    key = c1.selectbox("確認する資料", list(opts.keys()), key="sel_src")
     src = p["sources"][opts[key]]
-    label, tone = STATUS_TONE[src["extract_status"]]
     cov = src.get("coverage", {})
-    sel_n = sum(1 for g in src["segments"] if g.get("selected"))
-    st.markdown(
-        f"{chip(label, tone)}{chip(src['owner'] + 'の資料', 'info')}{chip(src['status'], 'muted')}"
-        f"<span class='rp-small'>形式 {esc(src['file_type'])}／読込 {esc(cov.get('read'))}/{esc(cov.get('total'))}"
-        f"{esc(cov.get('unit', ''))}／分析対象 {sel_n}/{len(src['segments'])} 箇所／元ファイルは保存していません</span>",
-        unsafe_allow_html=True)
-    if cov.get("notes"):
-        st.caption("読める範囲：" + cov["notes"])
-    if cov.get("skipped"):
-        st.warning("未読込・対象外：" + "、".join(cov["skipped"]))
-    for w in src.get("warnings", []):
-        st.warning(f"{w.get('where', '')} {w['message']}")
-
-    with st.expander("資料の情報と補足（補足は原文と分けて保存されます）"):
-        c1, c2 = st.columns([1, 3])
-        status = c1.selectbox("状態", SOURCE_STATUS, index=SOURCE_STATUS.index(src["status"]) if src["status"] in SOURCE_STATUS else 0,
-                              key=f"ed_status_{src['id']}_{src['version']}")
-        notes = c2.text_area("補足説明（利用者のメモ）", value=src.get("user_notes", ""), height=70,
-                             key=f"ed_notes_{src['id']}_{src['version']}")
-        if st.button("資料情報を保存", key=f"save_meta_{src['id']}_{src['version']}"):
-            src["status"], src["user_notes"] = status, notes
-            log(p, "資料情報更新", f"{src['id']} v{src['version']}", state.user_name())
-            st.success("保存しました。")
-
     groups = [g for g in dict.fromkeys(seg.get("group") or "（全体）" for seg in src["segments"])]
     slide_info = {f"スライド{x['slide']}": x for x in cov.get("slides", [])}
-    gsel = st.selectbox("表示する範囲（スライド・ページ・シート・見出し）", ["すべて"] + groups, key=f"sel_grp_{src['id']}")
+    gsel = c2.selectbox("表示する範囲（スライド・ページ・シート）", ["すべて"] + groups, key=f"sel_grp_{src['id']}")
+    label, tone = STATUS_TONE[src["extract_status"]]
+    sel_n = sum(1 for g in src["segments"] if g.get("selected"))
+    n_warn = len(src.get("warnings", [])) + (1 if cov.get("skipped") else 0)
+    st.markdown(f"{chip(label, tone)}" + (chip(f"注意 {n_warn}件", "warn") if n_warn else "")
+                + f"<span class='rp-small'>読込 {esc(cov.get('read'))}/{esc(cov.get('total'))}{esc(cov.get('unit', ''))}"
+                f"・分析の対象 {sel_n}/{len(src['segments'])}箇所</span>", unsafe_allow_html=True)
     if gsel in slide_info:
         si = slide_info[gsel]
         parts = [f"タイトル：{si['title']}"]
@@ -157,7 +139,7 @@ def review(p):
         "ノート確認済み": bool(g.get("note_reviewed")) if g.get("is_note") else None,
         "補足": g.get("user_note", ""),
     } for g in segs])
-    st.caption("「対象」のチェックを外した箇所は、検索・診断・AI送信に使いません。発表者ノートは内容を確認してから対象にしてください。")
+    st.caption("「対象」を外した箇所は、照合とAIに使いません。発表者ノートは内容を確認してから対象にします。")
     edited = st.data_editor(
         df, key=f"ed_segs_{src['id']}_{src['version']}_{gsel}", hide_index=True, width="stretch",
         disabled=["ID", "位置", "種類", "本文（原文）"],
@@ -189,3 +171,27 @@ def review(p):
         for g in segs:
             g["selected"] = False
         st.rerun()
+    _details(p, src, cov, n_warn)
+
+
+def _details(p, src, cov, n_warn):
+    """読込の状態・注意・資料の情報（補足情報なので、表の下にまとめて折りたたむ）。"""
+    with st.expander(f"読込の状態と注意（{n_warn}件）" if n_warn else "読込の状態"):
+        st.markdown(f"<span class='rp-small'>形式 {esc(src['file_type'])}／{esc(src['owner'])}の資料／状態 {esc(src['status'])}"
+                    f"／元のファイルは保存していません</span>", unsafe_allow_html=True)
+        if cov.get("notes"):
+            st.markdown(f"<span class='rp-small'>読める範囲：{esc(cov['notes'])}</span>", unsafe_allow_html=True)
+        if cov.get("skipped"):
+            st.markdown(f":orange[未読込・対象外：{esc('、'.join(cov['skipped']))}]")
+        for w in src.get("warnings", []):
+            st.markdown(f":orange[{esc(w.get('where', ''))}　{esc(w['message'])}]")
+    with st.expander("資料の情報と補足メモ"):
+        c1, c2 = st.columns([1, 3])
+        status = c1.selectbox("状態", SOURCE_STATUS, index=SOURCE_STATUS.index(src["status"]) if src["status"] in SOURCE_STATUS else 0,
+                              key=f"ed_status_{src['id']}_{src['version']}")
+        notes = c2.text_area("補足メモ（原文とは分けて保存）", value=src.get("user_notes", ""), height=70,
+                             key=f"ed_notes_{src['id']}_{src['version']}")
+        if st.button("保存", key=f"save_meta_{src['id']}_{src['version']}"):
+            src["status"], src["user_notes"] = status, notes
+            log(p, "資料情報更新", f"{src['id']} v{src['version']}", state.user_name())
+            st.success("保存しました。")
