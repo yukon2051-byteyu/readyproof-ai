@@ -75,6 +75,10 @@ def render():
         '<div class="desc">製品の情報と自社の業務ルールを照合し、導入判断・受入テストまでつなげます。</div>'
         '</div></div>', unsafe_allow_html=True)
 
+    section("AIと人の役割分担")
+    _grid([f'<div class="rp-card role"><div class="t"><span class="rp-num">{esc(m)}</span>{esc(w)}：{esc(d)}</div>'
+           f'<div class="b">{esc(x)}</div></div>' for m, w, d, x in ROLES])
+
     # ---- 3分デモ：開始 → 流れ → 成果物 ----
     section("使い方は4段階：入力2つ → 出力2つ")
     _grid([f'<div class="rp-card"><div class="t"><span class="rp-num">{i + 1}</span>{esc(t)}</div>'
@@ -87,10 +91,6 @@ def render():
     c2.download_button("見本：受入テスト仕様書（Excel）", sample_report(), file_name="ReadyProof_サンプル_受入テスト仕様書.xlsx",
                        mime=XLSX, icon=":material/download:", width="stretch")
     st.caption("架空の会社・資料で、画面の案内に沿って約3分。料金はかかりません。")
-
-    section("AIと人の役割分担")
-    _grid([f'<div class="rp-card role"><div class="t"><span class="rp-num">{esc(m)}</span>{esc(w)}：{esc(d)}</div>'
-           f'<div class="b">{esc(x)}</div></div>' for m, w, d, x in ROLES])
 
     # ---- 3件のデモ ----
     section("ほかのデモ（各約3分・4ステップ）")
