@@ -106,7 +106,7 @@ $env:RP_RUN_SLOW="1"; .venv\Scripts\python -m pytest -q   # 実音声のロー�
 
 ## 使用技術
 
-Python 3.12 / Streamlit 1.66 / pypdf / python-docx / openpyxl / python-pptx / PyAV / faster-whisper / Anthropic Python SDK（Claude API・構造化出力）/ pytest。選定理由は [docs/design.md](docs/design.md)。
+Python 3.12 / Streamlit 1.56（公開環境での不具合回避のため固定） / pypdf / python-docx / openpyxl / python-pptx / PyAV / faster-whisper / Anthropic Python SDK（Claude API・構造化出力）/ pytest。選定理由は [docs/design.md](docs/design.md)。
 
 ## デザイン方針
 

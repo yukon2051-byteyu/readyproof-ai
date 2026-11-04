@@ -1,6 +1,8 @@
 # ReadyProof AI（Python 3.12 で動作確認）
 # 公開環境（Streamlit Community Cloud）はこのファイルを使う。ローカル文字起こしは含めない（重いため）
-streamlit==1.66.1
+# 1.57 以降は新しいサーバー方式（Uvicorn）。1.66.1 は Community Cloud で画面部品の配信が500エラーになったため、
+# 従来方式（Tornado）が使える最後の版 1.56.0 に固定（2026-11-04）
+streamlit==1.56.0
 pandas==3.1.0
 openpyxl==3.1.5
 python-docx==1.2.0

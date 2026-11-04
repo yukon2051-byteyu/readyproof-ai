@@ -5,7 +5,7 @@
 | 項目 | 選定 | 理由 |
 |---|---|---|
 | 言語 | Python 3.12 | 初心者でも読みやすい。Streamlit Community Cloud で選択可能。PC の Python 3.15 は依存ライブラリ（pyarrow 等）が未対応のため使わない |
-| 画面 | Streamlit 1.66 | 画面とロジックを Python だけで書ける。公開が容易。`st.navigation`・表の行選択・`st.video(start_time=...)` を使用 |
+| 画面 | Streamlit 1.56（1.66.1 は公開環境で画面部品の配信が500エラーになったため固定） | 画面とロジックを Python だけで書ける。公開が容易。`st.navigation`・表の行選択・`st.video(start_time=...)` を使用 |
 | 資料読込 | pypdf / python-docx / openpyxl / python-pptx | 各形式の定番ライブラリ。参照位置（ページ・段落・セル・スライド・図形）を取得できる |
 | 録画 | PyAV（FFmpeg のライブラリ） | 外部コマンドを実行せずに音声トラック検証と音声抽出ができる（命令注入を防げる） |
 | 文字起こし | faster-whisper（ローカル） | 外部送信なし・API料金なし。比較は `transcription_options.md` |
