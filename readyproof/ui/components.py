@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import streamlit as st
 
-from ..ai.client import ClaudeClient, paid_ai_blockers
+from ..ai.client import ClaudeClient, paid_ai_blockers, setup_blockers
 from ..ai.tasks import estimate_cost_jpy
 from ..core import primary_product
 from ..logic.evidence import VALIDITY_NOTE, evidence_label, validate_evidence
@@ -140,11 +140,23 @@ def ai_panel(key: str, task_label: str, preview_text: str, max_tokens: int, deta
             f"- 結果はすべて「AI下書き」として登録され、人が確認するまで確定しません")
         with st.expander("送信する内容を確認する"):
             st.text(preview_text[:6000] + ("\n…（以下省略）" if len(preview_text) > 6000 else ""))
-        blockers = paid_ai_blockers(s, st.session_state.get("access_code", ""))
+        setup = setup_blockers(s)
+        if setup:
+            st.warning("この環境では、まだAIを実行できません（管理者の設定が必要です）。", icon=":material/lock:")
+            for x in setup:
+                st.caption(f"管理者向け：{x}")
+            return None
+        code = st.text_input("AIパスワード", type="password", value=st.session_state.get("access_code", ""),
+                             key=f"ai_pw_{key}", help="AIの実行には料金がかかるため、パスワードを知っている人だけが使えます。")
+        st.session_state.access_code = code  # 画面を移動しても保持する
+        if not code.strip():
+            st.caption("AIを実行するには、AIパスワードを入力してください。")
+            return None
+        blockers = paid_ai_blockers(s, code)
         lg = state.ledger()
         if lg and not blockers:
             summ = lg.summary(st.session_state.get("access_code", ""))
-            st.caption(f"今月の利用：AI生成 {summ['code']['ai_runs']}/{s.budget.ai_runs_per_code_per_month} 回（この利用コード）、"
+            st.caption(f"今月の利用：AI生成 {summ['code']['ai_runs']}/{s.budget.ai_runs_per_code_per_month} 回（このAIパスワード）、"
                        f"アプリ全体 {summ['all']['cost_jpy']:,.0f}/{s.budget.monthly_budget_jpy:,} 円")
         if blockers:
             for b in blockers:

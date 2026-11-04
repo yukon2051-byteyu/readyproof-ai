@@ -215,6 +215,14 @@ def review(p, rec_id: str | None = None):
         st.info("発言がありません。")
         return
 
+    ro = state.is_demo()
+    if not ro:
+        _speaker_bulk(p, rec, rid, utts)
+    _utterance_table(p, rec, rid, utts, ro)
+    _listen(p, rec, rid, utts, media, ro)
+
+
+def _speaker_bulk(p, rec, rid, utts):
     with st.expander("話者をまとめて設定する（自動ラベルごと）", expanded=False):
         st.caption("「話者A」などの自動ラベルが誰かは、AIは決めません。人が分類・確認してください。")
         labels = list(dict.fromkeys(u.get("speaker_label") or "" for u in utts))
@@ -230,6 +238,9 @@ def review(p, rec_id: str | None = None):
                 state.flash(f"{n}件の発言に話者を設定しました。")
                 st.rerun()
 
+
+
+def _utterance_table(p, rec, rid, utts, ro):
     df = pd.DataFrame([{
         "対象": bool(u.get("selected", True)), "ID": u["id"], "開始": fmt_ts(u.get("start")), "終了": fmt_ts(u.get("end")),
         "ラベル": u.get("speaker_label") or "", "話者の役割": u.get("speaker_role") or "未分類", "氏名": u.get("speaker_name", ""),
@@ -242,7 +253,7 @@ def review(p, rec_id: str | None = None):
                "数値・金額・否定表現・製品名は特に確認し、聞き取れない箇所は創作せず「聞き取り不能」としてください。")
     edited = st.data_editor(
         df, key=f"ed_utts_{rid}", hide_index=True, width="stretch",
-        disabled=["ID", "開始", "終了", "ラベル", "自動文字起こし（原文）", "種類の候補", "注意"],
+        disabled=True if ro else ["ID", "開始", "終了", "ラベル", "自動文字起こし（原文）", "種類の候補", "注意"],
         column_config={
             "対象": st.column_config.CheckboxColumn(width="small"),
             "話者の役割": st.column_config.SelectboxColumn(options=SPEAKER_ROLES),
@@ -251,7 +262,7 @@ def review(p, rec_id: str | None = None):
             "自動文字起こし（原文）": st.column_config.TextColumn(width="large"),
             "人が修正した文章": st.column_config.TextColumn(width="large"),
         })
-    if st.button("発言の変更を反映", type="primary", key=f"apply_utts_{rid}"):
+    if not ro and st.button("発言の変更を反映", type="primary", key=f"apply_utts_{rid}"):
         by = state.user_name()
         for row in edited.to_dict("records"):
             u = next(x for x in utts if x["id"] == row["ID"])
@@ -268,6 +279,9 @@ def review(p, rec_id: str | None = None):
         log(p, "発言の確認・修正", rid, by)
         st.success("反映しました。原文は残り、修正は履歴に記録されています。")
 
+
+
+def _listen(p, rec, rid, utts, media, ro):
     section("発言を聞き直す・前後を確認する")
     uid = st.selectbox("発言", [u["id"] for u in utts], key=f"sel_utt_{rid}",
                        format_func=lambda i: f"{i} {fmt_ts(next(x for x in utts if x['id'] == i).get('start'))} "
@@ -291,6 +305,8 @@ def review(p, rec_id: str | None = None):
         if u.get("history"):
             with st.expander(f"{uid} の修正履歴（{len(u['history'])}件）"):
                 st.dataframe(pd.DataFrame(u["history"]), hide_index=True)
+    if ro:
+        return
     section("重要な口頭説明を書面で確認する")
     reqs = [r for r in p["requirements"] if r["status"] != "廃止"]
     rsel = st.multiselect("関連する要件", [r["id"] for r in reqs], key=f"form_wq_reqs_{rid}")

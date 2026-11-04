@@ -66,8 +66,8 @@ def render():
 
     # ---- 3分デモ：開始 → 流れ → 成果物 ----
     section("使い方は4段階：入力2つ → 出力2つ", top="4.3px")  # 上の余白：当初より0.4cm短い（0.7cm詰めて0.3cm戻す）
-    _grid([f'<div class="rp-card{" out" if io.startswith("出力") else ""}"><div class="t"><span class="rp-num">{i + 1}</span>{esc(t)}</div>'
-           f'<div class="m{"" if io.startswith("出力") else " in"}" style="margin-top:0;padding-top:0">{esc(io)}</div>'
+    _grid([f'<div class="rp-card"><div class="t"><span class="rp-num">{i + 1}</span>{esc(t)}</div>'
+           f'<div class="m in" style="margin-top:0;padding-top:0">{esc(io)}</div>'
            f'<div class="b">{esc(d)}</div></div>'
            for i, (io, t, d) in enumerate(FLOW)])
 

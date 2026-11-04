@@ -32,8 +32,8 @@ LABELS = {
 def render():
     s = state.settings()
     page_title("設定・利用枠", "上限・予算は環境変数（RP_ で始まる名前）または Streamlit の secrets で変更します。月予算を画面から増やすことはできません。")
-    section("利用コード"); st.caption("AI生成の回数枠に使います。共有したコードは利用枠も共有されます")
-    code = st.text_input("利用コード", type="password", value=st.session_state.get("access_code", ""),
+    section("AIパスワード"); st.caption("AI生成の回数枠に使います。共有したコードは利用枠も共有されます")
+    code = st.text_input("AIパスワード", type="password", value=st.session_state.get("access_code", ""),
                          help="平文では記録せず、ハッシュ値で回数を数えます。")
     st.session_state.access_code = code  # 画面を移動しても保持する
     blockers = paid_ai_blockers(s, st.session_state.get("access_code", ""))

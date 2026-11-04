@@ -31,7 +31,8 @@ def render():
     ])
     st.download_button("受入テスト仕様書（Excel）をダウンロード", acceptance_test_workbook(p), type="primary",
                        file_name=f"{p['project']['id']}_受入テスト仕様書.xlsx", mime=XLSX, icon=":material/download:")
-    ai_tests_box(p)
+    if not state.is_demo():
+        ai_tests_box(p)
 
     focus = st.session_state.get("sel_test")
     for req in [r for r in p["requirements"] if r["status"] != "廃止"]:

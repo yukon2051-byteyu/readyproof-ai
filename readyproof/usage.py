@@ -2,7 +2,7 @@
 
 - 実行前に「予約」を書き込み、終了後に実績で「確定」する。予約中も枠を消費する（並行実行対策）
 - 失敗・再試行も記録する（API が課金した可能性があるため、実績不明なら見積額のまま残す）
-- 利用コードは平文で保存しない（ハッシュのみ）
+- AIパスワードは平文で保存しない（ハッシュのみ）
 - 永続的な記録先がない環境（例：Community Cloud の一時ディスク）では有料処理を止める
 """
 from __future__ import annotations
@@ -92,12 +92,12 @@ class Ledger:
                            f"（使用済み・予約 {s['all']['cost_jpy']:,.0f}円 + 今回見込み {est_jpy:,.0f}円）。")
         if kind == "ai":
             if s["code"]["ai_runs"] >= budget.ai_runs_per_code_per_month:
-                reasons.append(f"この利用コードの今月のAI生成回数（{budget.ai_runs_per_code_per_month}回）を使い切りました。")
+                reasons.append(f"このAIパスワードの今月のAI生成回数（{budget.ai_runs_per_code_per_month}回）を使い切りました。")
             if s["all"]["ai_runs"] >= budget.ai_runs_global_per_month:
                 reasons.append(f"アプリ全体の今月のAI生成回数上限（{budget.ai_runs_global_per_month}回）に達しました。")
         if kind == "transcribe":
             if s["code"]["transcribe_minutes"] + minutes > budget.transcribe_minutes_per_code_per_month:
-                reasons.append(f"この利用コードの今月の文字起こし枠（{budget.transcribe_minutes_per_code_per_month}分）を超えます。")
+                reasons.append(f"このAIパスワードの今月の文字起こし枠（{budget.transcribe_minutes_per_code_per_month}分）を超えます。")
             if s["all"]["transcribe_minutes"] + minutes > budget.transcribe_minutes_global_per_month:
                 reasons.append(f"アプリ全体の今月の文字起こし枠（{budget.transcribe_minutes_global_per_month}分）を超えます。")
         return reasons

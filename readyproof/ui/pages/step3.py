@@ -11,7 +11,7 @@ from ...export.excel import questionnaire_workbook
 from ...logic import rules
 from .. import state
 from ..components import evidence_view
-from ..layout import header, next_button
+from ..layout import demo_note, header, next_button
 from ..theme import CATEGORY_STYLE, badge, box, category_chip, chip, esc, review_chip, section, tiles
 from . import diagnosis, questions
 
@@ -40,7 +40,10 @@ def render():
             state.goto("input2")
         return
     summary(p, reqs)
-    ai_box(p, reqs)
+    if state.is_demo():
+        demo_note()
+    else:
+        ai_box(p, reqs)
     focus = st.session_state.get("focus_req")
     section("要件ごとの診断")
     for r in reqs:

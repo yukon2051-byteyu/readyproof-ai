@@ -89,3 +89,9 @@ def next_button(label: str, page_key: str) -> None:
         if p:
             apply_demo_state(p, page_key)
         state.goto(page_key)
+
+
+def demo_note() -> None:
+    """デモは見るだけ（資料・ルール・診断・テスト仕様は固定）。"""
+    st.info("デモのため、資料・ルール・診断結果・テスト仕様は変更できません（あらかじめ用意した結果を表示しています。料金はかかりません）。"
+            "受入テストの結果の記録と導入判断は試せます。", icon=":material/visibility:")

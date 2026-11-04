@@ -144,15 +144,19 @@ def review(p, src_fixed: dict | None = None):
         "補足": g.get("user_note", ""),
     } for g in segs])
     st.caption("「対象」を外した箇所は、照合とAIに使いません。発表者ノートは内容を確認してから対象にします。")
+    ro = state.is_demo()
     edited = st.data_editor(
         df, key=f"ed_segs_{src['id']}_{src['version']}_{gsel}", hide_index=True, width="stretch",
-        disabled=["ID", "位置", "種類", "本文（原文）"],
+        disabled=True if ro else ["ID", "位置", "種類", "本文（原文）"],
         column_config={
             "対象": st.column_config.CheckboxColumn(width="small"),
             "ID": st.column_config.TextColumn(width="small"),
             "本文（原文）": st.column_config.TextColumn(width="large"),
             "ノート確認済み": st.column_config.CheckboxColumn(help="ノートの場合のみ使用"),
         })
+    if ro:
+        _details(p, src, cov, n_warn, ro=True)
+        return
     c1, c2, c3 = st.columns([1, 1, 3])
     if c1.button("変更を反映", type="primary", key=f"apply_{src['id']}_{gsel}"):
         errors = []
@@ -178,7 +182,7 @@ def review(p, src_fixed: dict | None = None):
     _details(p, src, cov, n_warn)
 
 
-def _details(p, src, cov, n_warn):
+def _details(p, src, cov, n_warn, ro: bool = False):
     """読込の状態・注意・資料の情報（補足情報なので、表の下にまとめて折りたたむ）。"""
     with st.expander(f"読込の状態と注意（{n_warn}件）" if n_warn else "読込の状態"):
         st.markdown(f"<span class='rp-small'>形式 {esc(src['file_type'])}／{esc(src['owner'])}の資料／状態 {esc(src['status'])}"
@@ -189,6 +193,8 @@ def _details(p, src, cov, n_warn):
             st.markdown(f":orange[未読込・対象外：{esc('、'.join(cov['skipped']))}]")
         for w in src.get("warnings", []):
             st.markdown(f":orange[{esc(w.get('where', ''))}　{esc(w['message'])}]")
+    if ro:
+        return
     with st.expander("資料の情報と補足メモ"):
         c1, c2 = st.columns([1, 3])
         status = c1.selectbox("状態", SOURCE_STATUS, index=SOURCE_STATUS.index(src["status"]) if src["status"] in SOURCE_STATUS else 0,

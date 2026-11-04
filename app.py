@@ -9,7 +9,6 @@ import streamlit as st
 from readyproof.ai.client import get_api_key
 from readyproof.config import APP_NAME_EN
 from readyproof.ui import state
-from readyproof.export.jsonio import LoadError, from_json_bytes, to_json_bytes
 from readyproof.ui.pages import home, settings_page, step1, step2, step3, step4, step5
 from readyproof.ui.theme import inject_css
 
@@ -38,21 +37,6 @@ sections = {"": [pages["home"]],
 if get_api_key():
     sections["管理"] = [pages["settings"]]
 nav = st.navigation(sections)
-
-with st.sidebar:
-    p = state.project()
-    if p:
-        st.download_button("作業を保存（JSON）", to_json_bytes(p), file_name=f"{p['project']['id']}_readyproof.json",
-                           mime="application/json", icon=":material/save:", width="stretch",
-                           help="画面を閉じると作業は消えます。続きから使うときは、この保存ファイルを下で開きます。")
-    up = st.file_uploader("保存した作業を開く", type=["json"], key="sb_load")
-    if up is not None and st.button("開く", key="sb_open", width="stretch"):
-        try:
-            state.set_project(from_json_bytes(up.getvalue()))
-            state.flash("保存した作業を開きました。")
-            state.goto("input1")
-        except LoadError as e:
-            st.error(f"開けませんでした：{e}（今の作業はそのままです）")
 
 state.show_flash()
 nav.run()

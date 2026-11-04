@@ -79,18 +79,23 @@ def valid_access_codes() -> set[str]:
     return {c.strip() for c in str(raw).split(",") if c.strip()}
 
 
-def paid_ai_blockers(settings, code: str) -> list[str]:
+def setup_blockers(settings) -> list[str]:
+    """管理者の設定が足りないために、有料AIを実行できない理由（パスワード以外）。"""
+    return [r for r in paid_ai_blockers(settings, None) if "が正しくありません" not in r]
+
+
+def paid_ai_blockers(settings, code: str | None) -> list[str]:
     """有料AIを実行できない理由。空なら実行可能。"""
     reasons = []
     if not get_api_key():
-        reasons.append("APIキーが設定されていません（デモと手動機能は使えます）。")
+        reasons.append("APIキーが設定されていません（ANTHROPIC_API_KEY）。")
     if not settings.budget.usage_store_persistent:
         reasons.append("永続的な利用記録の保存先が設定されていないため、有料処理を停止しています（RP_USAGE_STORE_PERSISTENT）。")
     codes = valid_access_codes()
     if not codes:
-        reasons.append("利用コードが設定されていません（RP_ACCESS_CODES）。")
+        reasons.append("AIパスワードが設定されていません（RP_ACCESS_CODES）。")
     elif (code or "").strip() not in codes:
-        reasons.append("利用コードが正しくありません。")
+        reasons.append("AIパスワードが正しくありません。")
     return reasons
 
 

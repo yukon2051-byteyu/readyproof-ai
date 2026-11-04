@@ -9,7 +9,7 @@ from ...ingest import IngestError, ingest_bytes
 from ...logic import rules
 from .. import state
 from ..components import name_required
-from ..layout import header, next_button
+from ..layout import demo_note, header, next_button
 from ..theme import badge, box, chip, esc, section
 from . import requirements
 
@@ -20,6 +20,11 @@ def render():
     if not p:
         return
     reqs = [r for r in p["requirements"] if r["status"] != "廃止"]
+    if state.is_demo():
+        demo_note()
+        req_cards(p, reqs, ro=True)
+        next_button("次へ：③ 診断結果", "result")
+        return
     show = not reqs or st.toggle("質問に答えて要件を追加する", key="show_intake",
                                  value=st.session_state.get("intake_i", 0) > 0)
     if show:
@@ -47,14 +52,14 @@ def render():
     next_button("次へ：③ 診断結果", "result")
 
 
-def req_cards(p, reqs):
+def req_cards(p, reqs, ro: bool = False):
     drafts = [r for r in reqs if r["status"] == "下書き"]
     section(f"自社の要件（{len(reqs)}件・確定 {len(reqs) - len(drafts)}件）")
     if not reqs:
         st.info("まだ要件がありません。上の「質問に答えて要件を作る」から始めてください。")
         return
     ready = [r for r in drafts if not r.get("open_issues") and not r.get("term_warnings")]
-    if ready:
+    if ready and not ro:
         if st.button(f"未確定事項のない下書き {len(ready)}件をまとめて確定する", icon=":material/done_all:"):
             by = name_required()
             if by:
@@ -70,6 +75,8 @@ def req_cards(p, reqs):
                         f"{esc(r['id'])}　{esc(r['business'])}</span></span><br>{esc(r['rules'] or r['workflow'])}"
                         + (f"<br><span style='color:#B45309'>未確定：{esc(r['open_issues'])}</span>" if r.get("open_issues") else ""),
                         unsafe_allow_html=True)
+            if ro:
+                continue
             b1, b2 = c2.columns(2)
             if r["status"] == "下書き" and b1.button("確定", key=f"cf_{r['id']}", type="primary", width="stretch"):
                 by = name_required()

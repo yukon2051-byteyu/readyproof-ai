@@ -156,7 +156,7 @@ def test_paid_requires_persistent_store_and_code(settings, monkeypatch):
     assert any("永続" in b for b in paid_ai_blockers(settings, "abc"))
     settings.budget.usage_store_persistent = True
     assert paid_ai_blockers(settings, "abc") == []
-    assert any("利用コード" in b for b in paid_ai_blockers(settings, "wrong"))
+    assert any("AIパスワード" in b for b in paid_ai_blockers(settings, "wrong"))
     with pytest.raises(AIError):  # 記録先なしでは有料処理を実行しない
         execute(PaidFake({"t": {}}), "t", "x", {}, 100, settings, None, "abc")
 

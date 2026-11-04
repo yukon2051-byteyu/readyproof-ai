@@ -51,10 +51,21 @@ def test_open_demo_from_home():
     assert at.session_state["project"]["project"]["demo_id"] == "demo2"
 
 
-def test_demo_ai_panel_never_offers_paid_run():
-    at = page("result", build("demo1"), rediag=True)
-    assert "デモでは有料のAI処理を使いません" in texts(at)
-    assert not [b for b in at.button if b.label == "AIで下書きを作る"]
+def test_demo_is_view_only():
+    """デモは見るだけ：AIの実行・資料の追加・要件の確定や編集はできない。"""
+    p = build("demo1")
+    at = page("result", p, rediag=True)
+    assert "デモのため" in texts(at)
+    assert not [b for b in at.button if "AI" in b.label]
+    at = page("tests", p)
+    assert not [b for b in at.button if "AI" in b.label]
+    at = page("input2", p)
+    assert not at.exception and "デモのため" in texts(at)
+    assert not [b for b in at.button if b.label in ("確定", "編集", "登録")]
+    assert not at.toggle
+    at = page("input1", p, open_item=("src", p["sources"][0]["id"]))
+    assert not at.exception
+    assert not [b for b in at.button if b.label in ("読み込む", "変更を反映", "保存")]
 
 
 def test_no_api_key_explains_and_manual_still_works():
@@ -77,15 +88,13 @@ def test_pass_without_confirmed_expected_blocked_in_ui():
     assert not [r for r in at.session_state["project"]["runs"] if r["test_id"] == "T-002"]
 
 
-def test_sidebar_save_and_open_available():
-    """保存（JSON）と、保存した作業を開く欄はサイドバーにある。保存・Excel出力の画面はナビゲーションにない。"""
+def test_sidebar_has_no_save_or_upload():
+    """サイドバーには作業の保存・読込を置かない（作業はURLの識別子で自動復元する）。"""
     at = AppTest.from_file(APP, default_timeout=120)
     at.session_state["project"] = build("demo1")
     at.run()
     assert not at.exception
-    labels = [b.label for b in at.sidebar.get("download_button")]
-    assert "作業を保存（JSON）" in labels
-    # 不正なJSONの読込で現在の作業を失わないことは test_export_demos で検証
+    assert not at.sidebar.get("download_button") and not at.sidebar.get("file_uploader")
     assert at.session_state["project"]["project"]["demo_id"] == "demo1"
 
 
@@ -97,3 +106,22 @@ def test_status_not_color_only():
     assert "AIの下書き・未確認" in review_chip("未確認", "AI生成")
     assert "&lt;script&gt;" in chip("<script>")  # HTML はエスケープ
     assert "[" not in chip("a]b[c").split("[", 1)[1].rsplit("]", 1)[0]  # バッジ記法を壊す文字を置き換える
+
+
+def test_own_project_asks_ai_password(monkeypatch, tmp_path):
+    """自分の案件では、AIパスワードを入れたときだけAIを実行できる。"""
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "dummy-not-used")
+    monkeypatch.setenv("RP_ACCESS_CODES", "secret-pw")
+    monkeypatch.setenv("RP_USAGE_STORE_PERSISTENT", "true")
+    monkeypatch.setenv("RP_USAGE_LEDGER_PATH", str(tmp_path / "ledger.jsonl"))
+    p = build("demo1")
+    p["project"]["demo_id"] = None  # 自分の案件として扱う
+    p["diagnoses"] = []
+    at = page("result", p)
+    assert not at.exception
+    assert at.text_input(key="ai_pw_diag_AIで診断する").label == "AIパスワード"
+    assert not [b for b in at.button if b.label == "AIで診断する"]
+    at.text_input(key="ai_pw_diag_AIで診断する").input("wrong").run()
+    assert "AIパスワードが正しくありません" in texts(at)
+    at.text_input(key="ai_pw_diag_AIで診断する").input("secret-pw").run()
+    assert [b for b in at.button if b.label == "AIで診断する"]
