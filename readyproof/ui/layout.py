@@ -94,4 +94,4 @@ def next_button(label: str, page_key: str) -> None:
 def demo_note() -> None:
     """デモは見るだけ（資料・ルール・診断・テスト仕様は固定）。"""
     st.info("デモのため、資料・ルール・診断結果・テスト仕様は変更できません（診断結果とテスト仕様は、この資料とルールを本物のAI（Claude）に事前に渡して作った結果です。見るだけなので料金はかかりません）。"
-            "受入テストの結果の記録と導入判断は試せます。", icon=":material/visibility:")
+            "確認・確定・保存・記録などのボタンは、自分の案件でだけ使えます。", icon=":material/visibility:")

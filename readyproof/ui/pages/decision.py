@@ -10,7 +10,7 @@ from ...core import DECISIONS
 from ...logic import metrics as M
 from ...logic import rules
 from ...logic.stale import decision_changed_since, decision_snapshot
-from .. import state
+from .. import readonly, state
 from ..components import context_bar, page_title
 from ..theme import category_chip, chip, esc, section, tiles
 
@@ -97,7 +97,7 @@ def _issues_and_decision(p, m):
         st.markdown(f"{chip('現在の判断：' + d['value'], 'ok' if d['value'] == '導入可' else ('warn' if d['value'] == '条件付き導入可' else 'bad'))}"
                     f"<span class='rp-small'>{esc(d['by'])}（自己申告）／{esc(d['date'])}／理由：{esc(d['reason'])}"
                     f"{'／条件：' + esc(d['conditions']) if d['conditions'] else ''}</span>", unsafe_allow_html=True)
-    with st.form("form_decision"):
+    with readonly.scope(state.is_demo()), st.form("form_decision"):
         val = st.radio("判断", DECISIONS, index=DECISIONS.index(d["value"]), horizontal=True)
         c1, c2 = st.columns(2)
         by = c1.text_input("判断者", value=d["by"] or state.user_name())

@@ -7,7 +7,7 @@ import streamlit as st
 
 from ...ingest import IngestError, ingest_bytes
 from ...logic import rules
-from .. import state
+from .. import readonly, state
 from ..components import name_required
 from ..layout import demo_note, header, next_button
 from ..theme import badge, box, chip, esc, section
@@ -59,7 +59,7 @@ def req_cards(p, reqs, ro: bool = False):
         st.info("まだ要件がありません。上の「質問に答えて要件を作る」から始めてください。")
         return
     ready = [r for r in drafts if not r.get("open_issues") and not r.get("term_warnings")]
-    if ready and not ro:
+    if ready and not ro:  # デモでは一括確定ボタン自体を出さない
         if st.button(f"未確定事項のない下書き {len(ready)}件をまとめて確定する", icon=":material/done_all:"):
             by = name_required()
             if by:
@@ -75,7 +75,12 @@ def req_cards(p, reqs, ro: bool = False):
                         f"{esc(r['id'])}　{esc(r['business'])}</span></span><br>{esc(r['rules'] or r['workflow'])}"
                         + (f"<br><span style='color:#B45309'>未確定：{esc(r['open_issues'])}</span>" if r.get("open_issues") else ""),
                         unsafe_allow_html=True)
-            if ro:
+            if ro:  # デモ：確定・編集ボタンは押せない状態で表示
+                with readonly.scope(True):
+                    b1, b2 = c2.columns(2)
+                    if r["status"] == "下書き":
+                        b1.button("確定", key=f"cf_{r['id']}", type="primary", width="stretch")
+                    b2.button("編集", key=f"ed_{r['id']}", width="stretch")
                 continue
             b1, b2 = c2.columns(2)
             if r["status"] == "下書き" and b1.button("確定", key=f"cf_{r['id']}", type="primary", width="stretch"):

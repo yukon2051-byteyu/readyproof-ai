@@ -61,7 +61,8 @@ def test_demo_is_view_only():
     assert not [b for b in at.button if "AI" in b.label]
     at = page("input2", p)
     assert not at.exception and "デモのため" in texts(at)
-    assert not [b for b in at.button if b.label in ("確定", "編集", "登録")]
+    decide = [b for b in at.button if b.label in ("確定", "編集", "登録")]
+    assert decide and all(b.disabled for b in decide)  # 押せない状態で表示
     assert not at.toggle
     at = page("input1", p, open_item=("src", p["sources"][0]["id"]))
     assert not at.exception
@@ -125,3 +126,24 @@ def test_own_project_asks_ai_password(monkeypatch, tmp_path):
     assert "AIパスワードが正しくありません" in texts(at)
     at.text_input(key="ai_pw_diag_AIで診断する").input("secret-pw").run()
     assert [b for b in at.button if b.label == "AIで診断する"]
+
+
+def test_demo_decision_widgets_disabled_but_own_project_enabled():
+    """デモ：確認・確定・保存・記録・判断の部品はすべて非活性。自分の案件では使える。"""
+    from readyproof.demos.builder import build as build_screen
+
+    p = build_screen("demo1")
+    t = p["tests"][0]["id"]
+    r = next(x["id"] for x in p["requirements"] if x["status"] == "確定")
+    for pg, extra in (("tests", {"sel_test": t}), ("result", {"focus_req": r}), ("decision", {})):
+        at = page(pg, p, **extra)
+        assert not at.exception
+        widgets = list(at.button) + list(at.text_input) + list(at.text_area) + list(at.selectbox) + list(at.radio) + list(at.checkbox)
+        decide = [w for w in widgets if getattr(w, "label", "") not in ("詳しく確認する", "閉じる", "詳しく見る")
+                  and not getattr(w, "label", "").startswith(("次へ", "デモはここまで"))
+                  and not getattr(w, "label", "").endswith("の画面へ移動")]
+        assert decide, pg
+        assert all(w.disabled for w in decide), (pg, [w.label for w in decide if not w.disabled])
+    p["project"]["demo_id"] = None  # 自分の案件
+    at = page("tests", p, sel_test=t)
+    assert [b for b in at.button if b.label == "記録する" and not b.disabled]

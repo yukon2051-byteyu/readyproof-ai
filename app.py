@@ -8,13 +8,14 @@ import streamlit as st
 
 from readyproof.ai.client import get_api_key
 from readyproof.config import APP_NAME_EN
-from readyproof.ui import state
+from readyproof.ui import readonly, state
 from readyproof.ui.pages import home, settings_page, step1, step2, step3, step4, step5
 from readyproof.ui.theme import inject_css
 
 st.set_page_config(page_title=APP_NAME_EN, page_icon=":material/fact_check:", layout="wide",
                    initial_sidebar_state="expanded")
 inject_css()
+readonly.install()  # デモの「見るだけ」範囲で入力部品を非活性にする仕組み
 _ASSETS = os.path.join(os.path.dirname(__file__), "readyproof", "ui", "assets")
 st.logo(os.path.join(_ASSETS, "logo.svg"), size="large", icon_image=os.path.join(_ASSETS, "icon.svg"))
 
@@ -33,8 +34,8 @@ state.restore()  # 接続が切れて新しい画面になった場合、URLの�
 
 sections = {"": [pages["home"]],
             "導入確認の流れ": [pages[k] for k in ("input1", "input2", "result", "tests", "decision")]}
-# 設定・利用枠は運用者向け（有料AIを使う場合だけ必要）。APIキーがない公開版では表示しない
-if get_api_key():
+# 設定・利用枠は運用者向け。公開サイト（Hugging Face）では表示しない
+if get_api_key() and not os.environ.get("SPACE_ID"):  # SPACE_ID は Hugging Face の公開サイトで自動で入る
     sections["管理"] = [pages["settings"]]
 nav = st.navigation(sections)
 

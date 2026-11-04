@@ -7,7 +7,7 @@ from ...export.excel import acceptance_test_workbook
 from ...logic import metrics as M
 from ...logic import rules
 from ...logic.stale import run_stale_reasons, test_stale_reasons
-from .. import state
+from .. import readonly, state
 from ..layout import header, next_button
 from ..theme import RESULT_TONE, badge, box, chip, esc, section, tiles
 from . import tests
@@ -97,9 +97,11 @@ def row(p, t, opened: bool):
                     + f"<span class='rp-item'><span class='h'>{esc(t['id'])}　{esc(t['title'])}</span></span><br>"
                     f"<span class='rp-small'>{esc(t['viewpoint'])}／期待結果：{esc(t['expected'][:80])}</span>",
                     unsafe_allow_html=True)
-        if c2.button("閉じる" if opened else "開く・結果を記録", key=f"ot_{t['id']}", width="stretch"):
+        open_label = "詳しく見る" if state.is_demo() else "開く・結果を記録"
+        if c2.button("閉じる" if opened else open_label, key=f"ot_{t['id']}", width="stretch"):
             st.session_state.sel_test = None if opened else t["id"]
             st.rerun()
         if opened:
             st.divider()
-            tests.detail(p, t)
+            with readonly.scope(state.is_demo()):  # デモは見るだけ（編集・確定・結果の記録は押せない）
+                tests.detail(p, t)

@@ -9,7 +9,7 @@ import streamlit as st
 from ...core import ACTION_TYPES, DIAG_CATEGORIES
 from ...export.excel import questionnaire_workbook
 from ...logic import rules
-from .. import state
+from .. import readonly, state
 from ..components import evidence_view
 from ..layout import demo_note, header, next_button
 from ..theme import CATEGORY_STYLE, badge, box, category_chip, chip, esc, review_chip, section, tiles
@@ -128,8 +128,9 @@ def card(p, r, focused: bool):
                     st.caption(f"ほかの根拠 {len(dg['evidence']) - 1}件は「詳しく確認する」で表示します。")
             return
         st.divider()
-        diagnosis.detail(p, r)
-        followups(p, r, dg)
+        with readonly.scope(state.is_demo()):  # デモは見るだけ（確認・作成・採用などは押せない）
+            diagnosis.detail(p, r)
+            followups(p, r, dg)
 
 
 def followups(p, r, dg):

@@ -103,7 +103,7 @@ def detail(p, r):
     for i, ev in enumerate(dg["evidence"]):
         with box():
             evidence_view(p, ev, pid, i)
-            if not state.is_demo() and st.button("この根拠を外す", key=f"rm_ev_{dg['id']}_{i}", type="tertiary"):
+            if st.button("この根拠を外す", key=f"rm_ev_{dg['id']}_{i}", type="tertiary"):
                 dg["evidence"].pop(i)
                 dg["review_status"] = "未確認"
                 rules.check_diagnosis(p, dg)
@@ -128,8 +128,6 @@ def detail(p, r):
     for pr in probs:
         st.error(pr)
 
-    if state.is_demo():
-        return
     with st.expander("根拠を追加する"):
         ev = evidence_picker.pick(p, f"form_addev_{dg['id']}")
         if ev and st.button("根拠に追加", key=f"addev_{dg['id']}"):
