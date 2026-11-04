@@ -75,6 +75,16 @@ REQUEST_SCHEMA = _obj({
     "evidence": _arr(_obj({"ref": _s(), "quote": _s()})),
 })
 
+# AIの聞き取り（BL-001 案B）：製品資料を踏まえて、自社について聞く質問を作る
+INTERVIEW_SCHEMA = _obj({"questions": _arr(_obj({
+    "topic": _s("質問の観点（例：金額の境目、例外、権限、件数の上限）"),
+    "question": _s("利用者（自社の担当者）への質問。1つのことだけを、短く聞く"),
+    "why": _s("なぜ聞くのか。製品資料のどの記載と照合するためか（資料にない場合はその旨）"),
+    "answer_type": {"type": "string", "enum": ["choice", "number", "text"]},
+    "options": _arr(_s("choice のときの選択肢。number・text のときは空")),
+    "unit": _s("number のときの単位（例：円、人、年、件）。それ以外は空"),
+}))})
+
 TEST_ITEM_PROPS = {
     "title": _s(), "purpose": _s(), "viewpoint": {"type": "string", "enum": TEST_VIEWPOINTS},
     "role": _s("操作する役割"), "preconditions": _s("検証環境・テスト用アカウント・必要な設定"), "inputs": _s(),

@@ -24,12 +24,21 @@ def render():
         req_cards(p, reqs, ro=True)
         next_button("次へ：③ 診断結果", "result")
         return
-    show = not reqs or st.toggle("質問に答えて要件を追加する", key="show_intake",
-                                 value=st.session_state.get("intake_i", 0) > 0)
+    busy = st.session_state.get("intake_i", 0) > 0 or bool((st.session_state.get("aiq") or {}).get("questions"))
+    show = not reqs or st.toggle("質問に答えて要件を追加する", key="show_intake", value=busy)
     if show:
-        st.caption("聞くこと：① 業務の種類 ② 必ず守るルール（金額・期限・禁止事項） ③ 例外・未定のこと "
-                   "④ 誰が使うか・権限 ⑤ 使うときの条件（予算・プラン・連携・端末・通信）")
-        requirements.intake_view(p)
+        has_docs = any(s["owner"] == "製品" for s in p["sources"]) or p["recordings"]
+        modes = ["AIが製品の資料を踏まえて質問する（料金あり）", "決まった質問に答える（料金なし）"]
+        mode = st.radio("聞き方", modes, index=0 if has_docs else 1, horizontal=True, key="intake_mode")
+        if mode == modes[0]:
+            if not has_docs:
+                st.info("先に ① 製品の資料で、製品の資料か録画を読み込んでください。AIはその内容を踏まえて質問します。")
+            else:
+                requirements.ai_interview_view(p)
+        else:
+            st.caption("聞くこと：① 業務の種類 ② 必ず守るルール（金額・期限・禁止事項） ③ 例外・未定のこと "
+                       "④ 誰が使うか・権限 ⑤ 使うときの条件（予算・プラン・連携・端末・通信）")
+            requirements.intake_view(p)
 
     req_cards(p, reqs)
 
@@ -55,7 +64,7 @@ def req_cards(p, reqs, ro: bool = False):
     drafts = [r for r in reqs if r["status"] == "下書き"]
     section(f"自社の要件（{len(reqs)}件・確定 {len(reqs) - len(drafts)}件）")
     if not reqs:
-        st.info("まだ要件がありません。上の「質問に答えて要件を作る」から始めてください。")
+        st.info("まだ要件がありません。上の質問に答えて、要件を作ってください。")
         return
     ready = [r for r in drafts if not r.get("open_issues") and not r.get("term_warnings")]
     if ready and not ro:  # デモでは一括確定ボタン自体を出さない

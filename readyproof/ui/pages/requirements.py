@@ -1,4 +1,4 @@
-"""2 自社の仕事・ルール（要件）。"""
+"""② 自社のルール（要件）の部品：質問形式・AIの聞き取り・文章からの分割・手入力・詳細と確定。"""
 from __future__ import annotations
 
 import pandas as pd
@@ -242,4 +242,93 @@ def intake_view(p):
             st.rerun()
         if c2.button("最初からやり直す", width="stretch"):
             st.session_state.intake_ans, st.session_state.intake_i = {}, 0
+            st.rerun()
+
+
+# ---------------- AIの聞き取り（BL-001 案B） ----------------
+def ai_interview_view(p):
+    """AIが製品資料を踏まえて質問を作り、回答から要件の下書きを作る。質問・回答は画面を閉じるまでの一時的なもの。"""
+    from ...ai.tasks import (UNKNOWN_ANSWER, build_interview_input, interview_split_prompt, interview_transcript,
+                             run_interview, run_interview_split)
+
+    st.caption("AIが、読み込んだ製品の資料を踏まえて「この製品が合うか確かめるために、自社について聞くべきこと」を質問します。"
+               "答えると、AIが要件の下書きにまとめます（AIを2回使います・料金あり）。分からない点は「分からない・未定」で大丈夫です。")
+    iv = st.session_state.setdefault("aiq", {"questions": [], "answers": {}, "i": 0})
+    s = state.settings()
+    code = st.session_state.get("access_code", "")
+
+    # 1. 質問を作る
+    if not iv["questions"]:
+        business = st.text_input("聞き取る業務", value=p["project"].get("target_business", ""),
+                                 placeholder="例：経費の申請・承認", key="aiq_business")
+        if not business.strip():
+            return
+        prompt = build_interview_input(p, business.strip(), state.product_id())
+        client = ai_panel("interview", "聞き取りの質問づくり", prompt, 4000, ["案件の情報", "製品資料の抜粋（分析の対象に選んだ箇所）"],
+                          button_label="AIに質問を作ってもらう")
+        if client:
+            def make():
+                iv["questions"] = run_interview(p, business.strip(), state.product_id(), client, s, state.ledger(), code)
+                iv["answers"], iv["i"] = {}, 0
+                return iv["questions"]
+            run_ai(make, "{n}問の質問を作りました。順番に答えてください。")
+        return
+
+    qs, ans = iv["questions"], iv["answers"]
+    i = min(iv["i"], len(qs))
+    # 2. 1問ずつ答える
+    if i < len(qs):
+        q = qs[i]
+        with box():
+            st.progress(i / len(qs), text=f"質問 {i + 1} / {len(qs)}" + (f"（{q['topic']}）" if q.get("topic") else ""))
+            st.markdown(f"**{esc(q['question'])}**", unsafe_allow_html=True)
+            if q.get("why"):
+                st.caption("なぜ聞くか：" + q["why"])
+            key = f"aiq_{i}"
+            cur = ans.get(i)
+            if q["answer_type"] == "choice":
+                opts = q["options"] + [UNKNOWN_ANSWER]
+                val = st.radio("回答", opts, index=opts.index(cur) if cur in opts else None, key=key,
+                               label_visibility="collapsed")
+            else:
+                unk = st.checkbox(UNKNOWN_ANSWER, value=cur == UNKNOWN_ANSWER, key=key + "_unk")
+                if unk:
+                    val = UNKNOWN_ANSWER
+                elif q["answer_type"] == "number":
+                    unit = q.get("unit", "")
+                    num = st.number_input(f"回答（単位：{unit}）" if unit else "回答", min_value=0.0, step=1.0, key=key,
+                                          value=float(cur) if isinstance(cur, (int, float)) else None, placeholder="数字を入力")
+                    val = None if num is None else (int(num) if float(num).is_integer() else num)
+                else:
+                    val = st.text_input("回答", value=cur if isinstance(cur, str) and cur != UNKNOWN_ANSWER else "",
+                                        key=key, label_visibility="collapsed")
+            c1, c2, _ = st.columns([1, 1, 3])
+            if c1.button("戻る", disabled=i == 0, key=f"aiq_back_{i}", width="stretch"):
+                iv["i"] = i - 1
+                st.rerun()
+            if c2.button("次へ", type="primary", key=f"aiq_next_{i}", width="stretch",
+                         disabled=val is None or str(val).strip() == ""):
+                ans[i] = val
+                iv["i"] = i + 1
+                st.rerun()
+        return
+
+    # 3. 回答から要件の下書きを作る
+    transcript = interview_transcript(qs, ans)
+    with box():
+        st.progress(1.0, text="すべての質問に回答しました")
+        for n, q in enumerate(qs):
+            a = ans.get(n, "")
+            unit = q.get("unit", "") if q.get("answer_type") == "number" and a != UNKNOWN_ANSWER else ""
+            st.markdown(f"- {esc(q['question'])}　→　**{esc(a)}{esc(unit)}**", unsafe_allow_html=True)
+        client = ai_panel("interview_split", "回答から要件の下書きを作る", interview_split_prompt(transcript), 8000,
+                          ["聞き取りの記録（質問と回答）"], button_label="AIで要件の下書きにする")
+        if client:
+            def make():
+                made = run_interview_split(p, transcript, client, s, state.ledger(), code)
+                st.session_state.aiq = {"questions": [], "answers": {}, "i": 0}
+                return made
+            run_ai(make, "{n}件の要件の下書きを作りました。内容を確認して確定してください。")
+        if st.button("質問を作り直す", key="aiq_reset"):
+            st.session_state.aiq = {"questions": [], "answers": {}, "i": 0}
             st.rerun()

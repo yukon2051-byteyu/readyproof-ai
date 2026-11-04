@@ -173,3 +173,23 @@ def test_recording_decision_shows_completion_message():
     next(b for b in at.button if b.label == "判断を記録").click().run()
     assert not at.exception
     assert any("導入確認が完了しました" in s.value for s in at.success)
+
+
+def test_ai_interview_answers_one_by_one():
+    """AIの聞き取り：1問ずつ答え、「分からない・未定」も選べ、最後に回答の一覧が出る。"""
+    p = build("demo1")
+    p["project"]["demo_id"] = None  # 自分の案件として
+    qs = [{"topic": "金額", "question": "部長の承認が必要になる金額は？", "why": "資料に金額条件の設定がある",
+           "answer_type": "number", "options": []},
+          {"topic": "境目", "question": "ちょうどの金額は部長の承認が必要？", "why": "", "answer_type": "choice",
+           "options": ["必要", "不要"]}]
+    at = page("input2", p, show_intake=True, aiq={"questions": qs, "answers": {}, "i": 0})
+    assert not at.exception
+    assert "部長の承認が必要になる金額は？" in texts(at) and "なぜ聞くか" in texts(at)
+    assert at.number_input(key="aiq_0") and at.checkbox(key="aiq_0_unk").label == "分からない・未定"
+    at = page("input2", p, show_intake=True, aiq={"questions": qs, "answers": {0: 10000}, "i": 1})
+    assert "分からない・未定" in at.radio(key="aiq_1").options  # 選択式にも必ず付く
+    at = page("input2", p, show_intake=True, aiq={"questions": qs, "answers": {0: 10000, 1: "分からない・未定"}, "i": 2})
+    assert not at.exception
+    t = texts(at)
+    assert "回答から要件の下書きを作る" in t and "10000" in t and "分からない・未定" in t

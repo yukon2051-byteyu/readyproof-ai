@@ -13,7 +13,8 @@ from ..logic.evidence import evidence_label, norm
 from ..media.subtitles import fmt_ts
 from ..search import candidates, with_context
 from .client import AIError, AIResult
-from .prompts import DIAG_SCHEMA, REQUEST_SCHEMA, SPLIT_SCHEMA, TEST_MULTI_SCHEMA, TEST_SCHEMA, data_block
+from .prompts import (DIAG_SCHEMA, INTERVIEW_SCHEMA, REQUEST_SCHEMA, SPLIT_SCHEMA, TEST_MULTI_SCHEMA, TEST_SCHEMA,
+                      data_block)
 
 
 # ---------------- 見積 ----------------
@@ -356,3 +357,103 @@ def keyword_candidates_report(project: dict, req_id: str, product_id: str | None
 __all__ = ["estimate_cost_jpy", "execute", "run_diagnosis", "run_request_draft", "run_tests", "run_split",
            "build_diagnosis_input", "apply_diagnosis", "apply_tests", "apply_split", "keyword_candidates_report",
            "now_iso"]
+
+
+
+# ---------------- AIの聞き取り（BL-001 案B） ----------------
+UNKNOWN_ANSWER = "分からない・未定"
+INTERVIEW_MAX_CHARS = 8000  # 製品資料の抜粋の上限（費用を抑える）
+NL = "\n"
+
+
+def build_interview_input(project: dict, business: str, product_id: str | None) -> str:
+    """製品資料（分析の対象に選んだ箇所だけ）と案件の情報から、聞き取りの質問を作るための入力。"""
+    prod = find(project, "products", product_id) if product_id else None
+    pj = project["project"]
+    lines, used = [], 0
+    for src in project["sources"]:
+        if src["owner"] != "製品" or src["status"] != "有効":
+            continue
+        for g in src["segments"]:
+            if not g.get("selected"):
+                continue  # 未選択の箇所・ノートは送らない
+            line = f"[{src['name']} {g['loc_label']}] {g['text']}"
+            if used + len(line) > INTERVIEW_MAX_CHARS:
+                break
+            lines.append(line)
+            used += len(line)
+    for rec in project["recordings"]:
+        for u in rec.get("utterances", []):
+            if not (u.get("selected", True) and u.get("speaker_confirmed") and u.get("review_status") == "確認済み"):
+                continue  # 人が確認していない発言は送らない
+            line = f"[録画 {fmt_ts(u.get('start'))} {u.get('speaker_role') or '話者未分類'}] {u.get('edited_text') or u['raw_text']}"
+            if used + len(line) > INTERVIEW_MAX_CHARS:
+                break
+            lines.append(line)
+            used += len(line)
+    reqs = [f"- {r['business']}：{r['rules'] or r['workflow']}" for r in project["requirements"] if r["status"] != "廃止"]
+    product_line = (f"検討中の製品：{prod['name']}（ベンダー：{prod['vendor']}、検討プラン：{prod['plan'] or '未記入'}）"
+                    if prod else "検討中の製品：未登録")
+    rules_text = NL.join([
+        "あなたは、業務システム導入の担当者から、自社の業務ルールを聞き取るインタビュアーです。"
+        f"聞き取る業務は「{business}」です。"
+        "この製品が自社で使えるかを確かめるために、自社について聞くべき質問を5〜8問作ってください。",
+        "- 製品資料に書かれた機能・設定・制限（金額条件、例外、権限、件数の上限、保存期間、プランの違いなど）と照合できるよう、"
+        "自社のルールを具体的な値で答えられる質問にしてください（例：境目の金額、ちょうどの金額はどちら側か）。",
+        "- 製品の機能を前提に誘導しないでください。自社が本来どうしたいかを聞きます（製品に合わせて答えさせない）。",
+        "- 1つの質問で1つのことだけを聞いてください。専門用語は使わず、短く書いてください。",
+        "- 既に登録済みの要件と同じことは聞かないでください。",
+        f"- choice の選択肢に「{UNKNOWN_ANSWER}」は入れないでください（画面で必ず追加します）。",
+    ])
+    info = NL.join([f"案件名：{pj.get('name', '')}", f"対象業務：{pj.get('target_business', '')}",
+                    f"導入目的：{pj.get('purpose', '')}", f"制約条件：{pj.get('constraints', '')}"])
+    return (NL * 2).join([
+        product_line, rules_text,
+        data_block("案件の情報", info),
+        data_block("登録済みの自社の要件", NL.join(reqs) or "なし"),
+        data_block("製品の資料・確認済みの営業説明（分析の対象に選んだ箇所のみ）", NL.join(lines) or "なし"),
+    ])
+
+
+def run_interview(project: dict, business: str, product_id: str | None, ai, settings, ledger=None,
+                  code: str = "") -> list[dict]:
+    """AIが聞き取りの質問を作る（質問は案件に保存しない。回答から要件の下書きを作るまでの一時的なもの）。"""
+    prompt = build_interview_input(project, business, product_id)
+    res = execute(ai, "interview", prompt, INTERVIEW_SCHEMA, 4000, settings, ledger, code)
+    out = []
+    for q in res.data.get("questions", [])[:10]:
+        if not (q.get("question") or "").strip():
+            continue
+        typ = q.get("answer_type") if q.get("answer_type") in ("choice", "number", "text") else "text"
+        opts = [o for o in (q.get("options") or []) if o and o != UNKNOWN_ANSWER]
+        if typ == "choice" and len(opts) < 2:
+            typ, opts = "text", []
+        out.append({"topic": q.get("topic", ""), "question": q["question"].strip(), "why": q.get("why", ""),
+                    "answer_type": typ, "options": opts, "unit": (q.get("unit") or "").strip() if typ == "number" else ""})
+    return out
+
+
+def interview_transcript(questions: list[dict], answers: dict) -> str:
+    """質問と回答を、要件の「元の文章」として残す形にまとめる（回答していない質問は含めない）。"""
+    rows = []
+    for i, q in enumerate(questions):
+        a = answers.get(i)
+        if a is None or str(a).strip() == "":
+            continue
+        unit = q.get("unit", "") if q.get("answer_type") == "number" and a != UNKNOWN_ANSWER else ""
+        rows.append(f"質問：{q['question']}{NL}回答：{a}{unit}")
+    return (NL * 2).join(rows)
+
+
+def interview_split_prompt(transcript: str) -> str:
+    return ("次は、自社の担当者に業務ルールを聞き取った記録です。回答の内容だけをもとに、確認しやすい要件の単位にまとめてください。"
+            f"回答が「{UNKNOWN_ANSWER}」の点は、推測で埋めずに open_issues に「未定：（質問の内容）」と書いてください。"
+            "回答にない数値・条件を補わないでください。金額・以上/未満・禁止・例外は回答どおりに保持してください。"
+            "original_text には、根拠にした質問と回答をそのまま書いてください。"
+            + NL * 2 + data_block("聞き取りの記録", transcript))
+
+
+def run_interview_split(project: dict, transcript: str, ai, settings, ledger=None, code: str = "") -> list[dict]:
+    """聞き取りの記録から、要件の下書きを作る（人が確認・確定する）。"""
+    res = execute(ai, "split_requirements", interview_split_prompt(transcript), SPLIT_SCHEMA, 8000, settings, ledger, code)
+    return apply_split(project, transcript, res.data, origin="AIの聞き取り")
