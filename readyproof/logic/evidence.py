@@ -226,3 +226,38 @@ def is_vendor_confirmed(project: dict, ev: dict) -> bool:
     u = resolve(project, ev).get("utterance")
     return bool(u) and utt_confirmed(u) and (u.get("speaker_role") in VENDOR_ROLES) and u.get(
         "utterance_type") not in ("質問", "要望", "将来予定", "未回答・調査中", "推測・未確定")
+
+
+def context_rows(project: dict, ev: dict, around: int = 2) -> list[dict]:
+    """根拠の前後（同じスライド・ページ・シートの行、前後の発言）を返す。target=True が引用元。
+
+    短い引用だけを切り出して意味を変えないよう、周辺の前提・例外・質問と回答を一緒に見せるために使う。
+    """
+    from ..media.subtitles import fmt_ts
+
+    r = resolve(project, ev)
+    rows = []
+    if ev.get("ref_type") == "source" and r.get("segment"):
+        segs = r["source"]["segments"]
+        i = next(k for k, g in enumerate(segs) if g["seg_id"] == ev["seg_id"])
+        grp = segs[i].get("group")
+        for k in range(max(0, i - around), min(len(segs), i + around + 1)):
+            g = segs[k]
+            if grp and g.get("group") != grp:
+                continue
+            rows.append({"loc": g["loc_label"].split("」", 1)[-1].strip() or g["loc_label"], "text": g["text"],
+                         "target": k == i, "note": "分析対象外" if not g.get("selected", True) else ""})
+    elif ev.get("ref_type") == "utterance" and r.get("utterance"):
+        utts = r["recording"]["utterances"]
+        i = next(k for k, u in enumerate(utts) if u["id"] == ev["utt_id"])
+        for k in range(max(0, i - around), min(len(utts), i + around + 1)):
+            u = utts[k]
+            who = u.get("speaker_role") or "未分類"
+            rows.append({"loc": f"{fmt_ts(u.get('start'))} {who}", "text": utt_text(u), "target": k == i,
+                         "note": "" if utt_confirmed(u) else "未確認"})
+    elif ev.get("ref_type") == "answer" and r.get("question"):
+        q = r["question"]
+        rows = [{"loc": f"質問 {q['id']}", "text": q.get("question", ""), "target": False, "note": ""},
+                {"loc": f"回答（{q.get('answer_source') or '回答元未記入'}）", "text": q.get("answer_text", ""),
+                 "target": True, "note": ""}]
+    return rows

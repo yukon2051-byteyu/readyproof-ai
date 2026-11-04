@@ -95,23 +95,42 @@ def tour_bar(current: str) -> None:
             st.rerun()
 
 
+def _mark(text: str, quote: str) -> str:
+    """原文を HTML エスケープし、引用部分に印を付ける（見つからなければ印なし）。"""
+    t = esc(text)
+    q = esc(quote or "").strip()
+    if q and q in t:
+        return t.replace(q, f'<mark class="rp-mark">{q}</mark>', 1)
+    return t
+
+
 def evidence_view(p: dict, ev: dict, product_id: str | None, idx: int | None = None) -> dict:
-    """根拠1件：表示＋検証結果。問題がある場合だけ色を付ける。"""
+    """根拠1件：どこの何か（1行）＋原文の前後（引用に印）＋問題があれば注意。"""
+    from ..logic.evidence import context_rows
+
     v = validate_evidence(p, ev, product_id)
     head = ""
     if not v["ok"]:
         head = badge("検証エラー", "red", "error")
     elif v["warnings"]:
-        head = badge("要注意", "orange", "warning")
+        head = badge(f"注意 {len(v['warnings'])}件", "orange", "warning")
     label = evidence_label(p, ev, with_quote=False)
     st.markdown(f'{head}<span class="rp-small">{esc(ev.get("kind") or "根拠")}｜{esc(label)}</span>',
                 unsafe_allow_html=True)
-    if ev.get("quote"):
+    rows = context_rows(p, ev) if v["ok"] else []
+    if rows:
+        html_rows = "".join(
+            f'<div class="rp-ctxrow{" hit" if r["target"] else ""}"><div class="loc">{esc(r["loc"])}'
+            f'{"<br>" + esc(r["note"]) if r["note"] else ""}</div>'
+            f'<div>{_mark(r["text"], ev.get("quote", "")) if r["target"] else esc(r["text"])}</div></div>' for r in rows)
+        st.markdown(f'<div class="rp-ctxbox">{html_rows}</div>', unsafe_allow_html=True)
+    elif ev.get("quote"):
         st.markdown(f'<div class="rp-quote">『{esc(ev["quote"])}』</div>', unsafe_allow_html=True)
     for e in v["errors"]:
         st.markdown(f":red[エラー：{esc(e)}]")
-    for w in v["warnings"]:
-        st.markdown(f":orange[注意：{esc(w)}]")
+    if v["warnings"]:
+        st.markdown("<span class='rp-small'>" + "<br>".join("注意：" + esc(w) for w in v["warnings"]) + "</span>",
+                    unsafe_allow_html=True)
     return v
 
 

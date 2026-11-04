@@ -99,6 +99,19 @@ def detail(p, r):
     for a in dg.get("auto_adjustments", []):
         st.caption("自動調整：" + a)
     st.markdown(f"**理由**：{esc(dg['reason'])}", unsafe_allow_html=True)
+    section(f"根拠と原文（{len(dg['evidence'])}件・引用部分に印）")
+    if not dg["evidence"]:
+        st.caption("根拠がありません（記載・発言がないことは「対応不可」ではありません）。")
+    for i, ev in enumerate(dg["evidence"]):
+        with box():
+            evidence_view(p, ev, pid, i)
+            if st.button("この根拠を外す", key=f"rm_ev_{dg['id']}_{i}", type="tertiary"):
+                dg["evidence"].pop(i)
+                dg["review_status"] = "未確認"
+                rules.check_diagnosis(p, dg)
+                st.rerun()
+    validity_note()
+    section("満たす条件・残る条件")
     c1, c2 = st.columns(2)
     c1.markdown("**満たす条件**\n" + ("\n".join(f"- {x}" for x in dg["met_conditions"]) or "- なし"))
     c2.markdown("**残る条件（未確認・不適合）**\n" + ("\n".join(f"- {x}" for x in dg["remaining_conditions"]) or "- なし"))
@@ -108,18 +121,6 @@ def detail(p, r):
         st.caption("制約：" + dg["constraints"])
     st.markdown(f"**次に確認すること**：{esc(dg.get('next_check') or '未記入')}", unsafe_allow_html=True)
 
-    section("根拠")
-    if not dg["evidence"]:
-        st.caption("根拠がありません（記載・発言がないことは「対応不可」ではありません）。")
-    for i, ev in enumerate(dg["evidence"]):
-        with box():
-            evidence_view(p, ev, pid, i)
-            if st.button("この根拠を外す", key=f"rm_ev_{dg['id']}_{i}"):
-                dg["evidence"].pop(i)
-                dg["review_status"] = "未確認"
-                rules.check_diagnosis(p, dg)
-                st.rerun()
-    validity_note()
     if dg.get("rejected_evidence"):
         with st.expander(f"検証で除外したAIの引用（{len(dg['rejected_evidence'])}件）"):
             for ev in dg["rejected_evidence"]:

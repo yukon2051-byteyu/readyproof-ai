@@ -5,11 +5,12 @@ import pandas as pd
 import streamlit as st
 
 from ...ai.tasks import run_split, split_prompt
-from ...core import REQ_PRIORITY, find
+from ...core import REQ_PRIORITY, find, primary_product
+from ...intake import TEMPLATES, UNKNOWN, build_requirements, suggest_template, transcript, visible_questions
 from ...logic import rules
 from .. import state
 from ..components import ai_panel, context_bar, name_required, page_title, run_ai
-from ..theme import chip, esc
+from ..theme import box, chip, esc
 
 LABELS = {"business": "業務名", "workflow": "作業内容・流れ", "role": "操作する役割", "rules": "ルール・条件・例外の扱い",
           "exceptions": "例外", "inputs": "入力", "outputs": "出力", "priority": "重要度", "reason": "理由",
@@ -27,9 +28,14 @@ def render():
     with left:
         req_list(p)
     with right:
-        tab = st.segmented_control("操作", ["詳細・編集", "手動で追加", "文章から分割（AI）"], key="req_tab",
-                                   default="詳細・編集", label_visibility="collapsed") or "詳細・編集"
-        if tab == "詳細・編集":
+        tabs = ["質問に答えて作る", "詳細・編集", "手動で追加", "文章から分割（AI）"]
+        if "_goto_req_tab" in st.session_state:
+            st.session_state.req_tab = st.session_state.pop("_goto_req_tab")
+        tab = st.segmented_control("操作", tabs, key="req_tab", default=tabs[1] if p["requirements"] else tabs[0],
+                                   label_visibility="collapsed") or tabs[1]
+        if tab == "質問に答えて作る":
+            intake_view(p)
+        elif tab == "詳細・編集":
             detail(p)
         elif tab == "手動で追加":
             add_manual(p)
@@ -168,3 +174,72 @@ def ai_split(p):
         s = state.settings()
         run_ai(lambda: run_split(p, text, client, s, state.ledger(), st.session_state.get("access_code", "")),
                "{n}件の要件候補（下書き）を作成しました。")
+
+
+# ---------------- 質問に答えて作る（AIなし） ----------------
+def intake_view(p):
+    st.caption("業務の種類ごとの質問に答えると、要件の下書きを作ります。分からない点は「分からない・未定」を選べば、"
+               "推測で埋めずに未確定事項として残します（料金なし・AI不使用）。")
+    prod = primary_product(p) or {}
+    pj = p["project"]
+    guess = suggest_template(pj.get("name", ""), pj.get("target_business", ""), prod.get("name", ""))
+    ids = list(TEMPLATES.keys())
+    tid = st.selectbox("業務の種類", ids, index=ids.index(st.session_state.get("intake_tid", guess)),
+                       format_func=lambda t: TEMPLATES[t]["label"] + ("（おすすめ）" if t == guess else ""))
+    if st.session_state.get("intake_tid") != tid:
+        st.session_state.intake_tid, st.session_state.intake_i = tid, 0
+        st.session_state.intake_ans = {}
+    ans = st.session_state.setdefault("intake_ans", {})
+    qs = visible_questions(tid, ans)
+    i = min(st.session_state.get("intake_i", 0), len(qs))
+    if i < len(qs):
+        q = qs[i]
+        with box():
+            st.progress((i) / len(qs), text=f"質問 {i + 1} / {len(qs)}")
+            st.markdown(f"**{q['q']}**")
+            if q.get("help"):
+                st.caption(q["help"])
+            key = f"intake_{tid}_{q['id']}"
+            cur = ans.get(q["id"], q.get("default", ""))
+            if q["type"] == "choice":
+                opts = q["options"]
+                val = st.radio("回答", opts, index=opts.index(cur) if cur in opts else None, key=key,
+                               label_visibility="collapsed")
+            elif q["type"] == "number":
+                unk = st.checkbox(UNKNOWN, value=cur == UNKNOWN, key=key + "_unk")
+                val = UNKNOWN if unk else st.number_input("回答", min_value=0.0, step=1.0, key=key,
+                                                         value=float(cur) if isinstance(cur, (int, float)) else None,
+                                                         label_visibility="collapsed", placeholder="数字を入力")
+            else:
+                val = st.text_input("回答", value=cur or "", key=key, label_visibility="collapsed")
+            c1, c2, _ = st.columns([1, 1, 3])
+            if c1.button("戻る", disabled=i == 0, key=f"intake_back_{i}", width="stretch"):
+                st.session_state.intake_i = i - 1
+                st.rerun()
+            if c2.button("次へ", type="primary", key=f"intake_next_{i}", width="stretch",
+                         disabled=(q["type"] == "choice" and val is None) or (q["type"] == "number" and val is None)):
+                ans[q["id"]] = val
+                st.session_state.intake_i = i + 1
+                st.rerun()
+        return
+
+    drafts = build_requirements(tid, ans)
+    with box():
+        st.progress(1.0, text="すべての質問に回答しました")
+        st.markdown(f"**要件の下書き：{len(drafts)}件**（登録後、内容を確認して確定してください）")
+        for d in drafts:
+            st.markdown(f"- **{esc(d['business'])}**（{esc(d['priority'])}）：{esc(d['rules'])}"
+                        + (f"　:orange[未確定：{esc(d['open_issues'])}]" if d.get("open_issues") else ""))
+        with st.expander("回答の原文（要件の「元の文章」に残ります）"):
+            st.text(transcript(tid, ans))
+        c1, c2, _ = st.columns([1.4, 1, 2])
+        if c1.button("下書きとして登録", type="primary", disabled=not drafts, width="stretch"):
+            made = [rules.add_requirement(p, d, origin="質問形式", by=state.user_name()) for d in drafts]
+            st.session_state.sel_req = made[0]["id"]
+            st.session_state.intake_ans, st.session_state.intake_i = {}, 0
+            st.session_state._goto_req_tab = "詳細・編集"
+            state.flash(f"{len(made)}件の要件を下書きとして登録しました。内容を確認して確定してください。")
+            st.rerun()
+        if c2.button("最初からやり直す", width="stretch"):
+            st.session_state.intake_ans, st.session_state.intake_i = {}, 0
+            st.rerun()

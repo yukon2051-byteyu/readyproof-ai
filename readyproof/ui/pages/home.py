@@ -1,18 +1,42 @@
-"""トップページ：何をするアプリか → ガイド付きデモ（約4分）→ 自分の案件で使う。"""
+"""トップページ：3分で価値が伝わる構成。
+
+1. 見出し帯（何をするアプリか）
+2. 3分デモ：開始ボタン・操作の流れ（5ステップ）・最終的な成果物（根拠付きの診断と Excel レポートの見本）
+3. できること・役割分担
+4. 3件のデモの選択
+5. 自分の案件で使う
+"""
 from __future__ import annotations
 
 import streamlit as st
 
-from ...config import APP_NAME_JA, TAGLINE
+from ...config import APP_NAME_JA
 from ...core import new_project
 from ...demos.builder import DEMOS, build
+from ...export.excel import report_workbook
 from ...export.jsonio import LoadError, from_json_bytes
 from .. import state
 from ..components import start_tour
 from ..theme import esc, section
 
-SHORT = "製品の資料や営業説明と、自社の業務ルールを根拠付きで照合し、質問・依頼書・受入テスト・導入判断までつなげます。"
+XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
+# 見出し帯のモチーフ：「根拠を確かめた書類」（書類＋引用の行＋チェック）
+MOTIF = (
+    '<svg class="motif" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">'
+    '<rect x="38" y="18" width="104" height="136" rx="12" fill="none" stroke="#38BDF8" stroke-opacity=".35" stroke-width="4"/>'
+    '<rect x="54" y="42" width="56" height="7" rx="3.5" fill="#FFFFFF" fill-opacity=".35"/>'
+    '<rect x="54" y="60" width="72" height="7" rx="3.5" fill="#FFFFFF" fill-opacity=".22"/>'
+    '<rect x="54" y="78" width="64" height="7" rx="3.5" fill="#FFFFFF" fill-opacity=".22"/>'
+    '<rect x="50" y="96" width="4" height="26" rx="2" fill="#38BDF8" fill-opacity=".8"/>'
+    '<rect x="60" y="100" width="58" height="6" rx="3" fill="#38BDF8" fill-opacity=".45"/>'
+    '<rect x="60" y="112" width="44" height="6" rx="3" fill="#38BDF8" fill-opacity=".45"/>'
+    '<circle cx="142" cy="146" r="34" fill="#38BDF8"/>'
+    '<path d="M126 147 l11 11 l22 -24" fill="none" stroke="#14263F" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>'
+    '</svg>')
+
+FLOW = [("資料を読む", "スライド・表を位置付きで"), ("照合する", "根拠付きで6区分に診断"),
+        ("質問・依頼", "不明点は質問、不足は依頼書"), ("試す", "人が実機でテスト・再テスト"), ("判断する", "残件を見て人が判断")]
 WHAT = [
     ("照合する", "資料のページ・スライドや営業の発言時刻を根拠に、自社のルールに合うかを6区分で整理します。"),
     ("確認・依頼する", "不明点はベンダーへの質問に、合わない部分は対応方法を比べて改修・設定変更の依頼書にします。"),
@@ -30,53 +54,77 @@ DEMO_POINTS = {
 }
 
 
-# 見出し帯のモチーフ：「根拠を確かめた書類」（書類＋引用の行＋チェック）
-MOTIF = (
-    '<svg class="motif" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">'
-    '<rect x="38" y="18" width="104" height="136" rx="12" fill="none" stroke="#38BDF8" stroke-opacity=".35" stroke-width="4"/>'
-    '<rect x="54" y="42" width="56" height="7" rx="3.5" fill="#FFFFFF" fill-opacity=".35"/>'
-    '<rect x="54" y="60" width="72" height="7" rx="3.5" fill="#FFFFFF" fill-opacity=".22"/>'
-    '<rect x="54" y="78" width="64" height="7" rx="3.5" fill="#FFFFFF" fill-opacity=".22"/>'
-    '<rect x="50" y="96" width="4" height="26" rx="2" fill="#38BDF8" fill-opacity=".8"/>'
-    '<rect x="60" y="100" width="58" height="6" rx="3" fill="#38BDF8" fill-opacity=".45"/>'
-    '<rect x="60" y="112" width="44" height="6" rx="3" fill="#38BDF8" fill-opacity=".45"/>'
-    '<circle cx="142" cy="146" r="34" fill="#38BDF8"/>'
-    '<path d="M126 147 l11 11 l22 -24" fill="none" stroke="#14263F" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>'
-    '</svg>')
+@st.cache_data(show_spinner=False)
+def sample_report() -> bytes:
+    """成果物の見本（デモ1の導入確認レポート）。架空データ・料金なし。"""
+    return report_workbook(build("demo1"))
 
 
-def _cards(items: list[str]) -> None:
-    st.markdown(f'<div class="rp-grid" style="--cols:{len(items)}">{"".join(items)}</div>', unsafe_allow_html=True)
+def _grid(items: list[str], cols: int | None = None) -> None:
+    st.markdown(f'<div class="rp-grid" style="--cols:{cols or len(items)}">{"".join(items)}</div>', unsafe_allow_html=True)
+
+
+def _open_demo(demo_id: str) -> None:
+    with st.spinner("サンプル資料を、実際の読込機能で読み込んでいます…"):
+        p = build(demo_id)
+    state.set_project(p, demo_initial=p)
+    start_tour(demo_id)
 
 
 def render():
-    tag = esc(TAGLINE).replace("「うちの会社で使える？」", "<em>「うちの会社で使える？」</em>")
     st.markdown(
         f'<div class="rp-hero">{MOTIF}<div class="inner"><div class="eyebrow">{esc(APP_NAME_JA)}</div>'
-        f'<div class="name">ReadyProof <span>AI</span></div><div class="tag">{tag}</div>'
-        f'<div class="desc">{esc(SHORT)}</div></div></div>', unsafe_allow_html=True)
+        '<div class="name">ReadyProof <span>AI</span></div>'
+        '<div class="tag"><em>「うちの会社で使える？」</em>を、<br>資料の診断から改修依頼・テストまで支援。</div>'
+        '<div class="desc">製品の資料や営業説明と、自社の業務ルールを根拠付きで照合し、<br>'
+        '質問・依頼書・受入テスト・導入判断までつなげます。</div></div></div>', unsafe_allow_html=True)
 
+    # ---- 3分デモ：開始 → 流れ → 成果物 ----
+    section("3分で体験する")
+    left, right = st.columns([1.05, 1], gap="medium")
+    with left:
+        st.markdown('<div class="rp-flow">' + "".join(
+            f'<div class="st"><span class="rp-num">{i + 1}</span><div><b>{esc(t)}</b><br>'
+            f'<span class="rp-small">{esc(d)}</span></div></div>' for i, (t, d) in enumerate(FLOW)) + "</div>",
+            unsafe_allow_html=True)
+        if st.button("3分デモを始める（経費精算サービスの導入）", type="primary", icon=":material/play_arrow:",
+                     width="stretch", key="open_main"):
+            _open_demo("demo1")
+        st.caption("架空の会社・資料で、画面の案内に沿って5ステップ。料金はかかりません。")
+    with right:
+        st.markdown(
+            '<div class="rp-result"><div class="h">最終的に手に入るもの</div>'
+            '<div class="row"><span class="lb">自社の要件</span><div>10,000円以上は、上司の承認後に部長が承認する</div></div>'
+            '<div class="row"><span class="lb">診断</span><div><b class="ok">標準設定で対応できる見込み</b></div></div>'
+            '<div class="row"><span class="lb">根拠</span><div>ご提案資料 スライド2「承認ワークフロー」表3行目<br>'
+            '<span class="q">『10,000円以上 ｜ 承認ルート：上長 → 部長』</span></div></div>'
+            '<div class="row"><span class="lb">実機テスト</span><div>10,000円ちょうど：<b class="ng">不合格</b>'
+            ' → 設定変更 → <b class="ok">再テスト合格</b></div></div>'
+            '<div class="row"><span class="lb">出力</span><div>導入確認レポート・ベンダーへの質問書・改修依頼書（Excel）</div></div>'
+            '<div class="foot">架空のデモ「経費精算サービスの導入」の実際の結果です。</div></div>',
+            unsafe_allow_html=True)
+        st.download_button("成果物の見本（導入確認レポート.xlsx）をダウンロード", sample_report(),
+                           file_name="ReadyProof_サンプル_導入確認レポート.xlsx", mime=XLSX, icon=":material/download:",
+                           width="stretch")
+
+    # ---- できること・役割分担 ----
     section("このアプリでできること")
-    _cards([f'<div class="rp-card"><div class="t"><span class="rp-num">{i + 1}</span>{esc(t)}</div><div class="b">{esc(b)}</div></div>'
-            for i, (t, b) in enumerate(WHAT)])
+    _grid([f'<div class="rp-card"><div class="t"><span class="rp-num">{i + 1}</span>{esc(t)}</div><div class="b">{esc(b)}</div></div>'
+           for i, (t, b) in enumerate(WHAT)])
     section("AI・プログラム・人の役割分担")
-    _cards([f'<div class="rp-card role"><div class="t"><span class="rp-num">{esc(mark)}</span>{esc(who)}：{esc(does)}</div>'
-            f'<div class="b">{esc(detail)}</div></div>' for mark, who, does, detail in ROLES])
+    _grid([f'<div class="rp-card role"><div class="t"><span class="rp-num">{esc(m)}</span>{esc(w)}：{esc(d)}</div>'
+           f'<div class="b">{esc(x)}</div></div>' for m, w, d, x in ROLES])
 
-    section("ガイド付きデモ（約4分・5ステップ・料金なし）")
-    st.caption("架空の会社・製品・資料で、照合から判断までを画面の案内に沿って体験できます。")
-    _cards([f'<div class="rp-card"><div class="t">{esc(d["title"])}</div><div class="b">{esc(d["theme"])}</div>'
-            f'<ul>{"".join(f"<li>{esc(x)}</li>" for x in DEMO_POINTS[d["id"]])}</ul>'
-            f'<div class="m">業務：{esc(d["business"])}</div></div>' for d in DEMOS])
-    cols = st.columns(len(DEMOS))
-    for col, d in zip(cols, DEMOS):
-        if col.button("このデモを始める", key=f"open_{d['id']}", type="primary", icon=":material/play_arrow:",
-                      width="stretch"):
-            with st.spinner("サンプル資料を、実際の読込機能で読み込んでいます…"):
-                p = build(d["id"])
-            state.set_project(p, demo_initial=p)
-            start_tour(d["id"])
+    # ---- 3件のデモ ----
+    section("ほかのデモ（各約4分・5ステップ）")
+    _grid([f'<div class="rp-card"><div class="t">{esc(d["title"])}</div><div class="b">{esc(d["theme"])}</div>'
+           f'<ul>{"".join(f"<li>{esc(x)}</li>" for x in DEMO_POINTS[d["id"]])}</ul>'
+           f'<div class="m">業務：{esc(d["business"])}</div></div>' for d in DEMOS])
+    for col, d in zip(st.columns(len(DEMOS)), DEMOS):
+        if col.button("このデモを始める", key=f"open_{d['id']}", icon=":material/play_arrow:", width="stretch"):
+            _open_demo(d["id"])
 
+    # ---- 自分の案件 ----
     section("自分の案件で使う")
     t1, t2 = st.tabs(["新しい案件を作る", "保存した案件を開く"])
     with t1:
@@ -99,6 +147,5 @@ def render():
                 state.set_project(p)
                 state.flash("案件を開きました。資料・録画の元ファイルは含まれていません。")
                 state.goto("decision")
-
     st.caption("公開版では、外部に送ってよい資料・録画（または匿名化した情報）だけを使ってください。"
                "認証はなく、作業者名は自己申告です。AI に文字を送る前には、送信先と内容を必ず表示します。")

@@ -99,11 +99,35 @@ div[class*="st-key-rpbox_"] {{ padding: 2px 4px; }}
 .rp-hero .tag em {{ font-style: normal; color: {ACCENT}; }}
 .rp-hero .desc {{ font-size: .95rem; color: #DCE4EE; margin-top: 6px; }}
 
+/* トップ：3分デモの流れと成果物の見本（左右の高さをそろえ、下のボタンの位置を合わせる） */
+.rp-flow {{ display: flex; flex-direction: column; gap: 8px; height: 340px; margin-bottom: 12px; }}
+.rp-flow .st {{ flex: 1; display: flex; gap: 12px; align-items: center; background: #fff; border: 1px solid {BORDER};
+  border-radius: 8px; padding: 6px 12px; box-shadow: 0 1px 2px rgba(20, 38, 63, .06); line-height: 1.35; }}
+.rp-result {{ height: 340px; box-sizing: border-box; display: flex; flex-direction: column; background: #fff;
+  border: 1px solid {BORDER}; border-top: 3px solid {ACCENT}; border-radius: 10px; padding: 12px 16px; margin-bottom: 12px;
+  box-shadow: 0 1px 3px rgba(20, 38, 63, .08); }}
+.rp-result .h {{ font-weight: 700; color: {NAVY}; margin-bottom: 4px; }}
+.rp-result .row {{ display: grid; grid-template-columns: 6.2em 1fr; gap: 8px; padding: 6px 0; border-bottom: 1px dashed #E5EAF0;
+  font-size: .88rem; line-height: 1.5; }}
+.rp-result .lb {{ color: {MUTED}; font-size: .8rem; }}
+.rp-result .q {{ display: inline-block; margin-top: 3px; background: #EAF7FE; border-left: 3px solid {ACCENT}; padding: 1px 8px; }}
+.rp-result .ok {{ color: #1E7B45; }} .rp-result .ng {{ color: #B42318; }}
+.rp-result .foot {{ font-size: .8rem; color: {MUTED}; margin-top: auto; padding-top: 6px; }}
+
+/* 根拠の原文（前後の行と、引用部分の印） */
+.rp-ctxbox {{ border: 1px solid #E5EAF0; border-radius: 8px; overflow: hidden; margin: 4px 0 8px; }}
+.rp-ctxrow {{ display: grid; grid-template-columns: 11em 1fr; gap: 10px; padding: 5px 10px; font-size: .86rem;
+  border-top: 1px solid #F0F3F7; color: #4B5563; }}
+.rp-ctxrow:first-child {{ border-top: none; }}
+.rp-ctxrow .loc {{ font-size: .76rem; color: {MUTED}; }}
+.rp-ctxrow.hit {{ background: #F3FAFF; border-left: 4px solid {ACCENT}; color: #1F2937; }}
+mark.rp-mark {{ background: #BFE9FC; color: inherit; padding: 0 2px; border-radius: 3px; }}
+
 /* ガイド付きデモの帯 */
 .st-key-tour {{ background: #FFFFFF; border: 1px solid {BORDER}; border-left: 5px solid {ACCENT}; border-radius: 10px;
   padding: 10px 14px 8px; margin-bottom: 6px; box-shadow: 0 1px 3px rgba(20, 38, 63, .08); }}
 
-@media (max-width: 800px) {{ .rp-grid {{ grid-template-columns: 1fr; }} .rp-hero .name {{ font-size: 2rem; }}
+@media (max-width: 800px) {{ .rp-flow, .rp-result {{ height: auto; }} .rp-ctxrow {{ grid-template-columns: 1fr; }} .rp-grid {{ grid-template-columns: 1fr; }} .rp-hero .name {{ font-size: 2rem; }}
   .rp-hero .motif {{ display: none; }} .rp-hero .inner {{ max-width: 100%; }} }}
 </style>
 """
