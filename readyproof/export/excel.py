@@ -53,7 +53,7 @@ def _header_block(ws, title: str, project: dict, status_note: str = "") -> int:
             ("製品・プラン", f"{prod.get('name', '未登録')}／{prod.get('vendor', '')}／{prod.get('plan', '')} {prod.get('edition', '')}"),
             ("出力日時", now_iso())]
     if project["project"].get("demo_id"):
-        rows.append(("注意", "架空のデモデータです。AI結果は「準備済みのデモ結果」です。"))
+        rows.append(("注意", "架空のデモデータです。診断結果・テスト仕様は、デモの資料を本物のAIに事前に渡して作った結果です。"))
     if status_note:
         rows.append(("状態", status_note))
     for i, (k, v) in enumerate(rows, start=2):
@@ -300,24 +300,32 @@ def acceptance_test_workbook(project: dict) -> bytes:
     tests = [t for t in project["tests"] if t["status"] != "廃止"]
     reqs = [r for r in project["requirements"] if r["status"] != "廃止"]
     draft = sum(1 for t in tests if t["status"] != "確定")
+    latest = [latest_run(project, t["id"]) for t in tests]
+    n_ok = sum(1 for x in latest if x and x["status"] == "完了" and x["result"] == "合格")
+    n_ng = sum(1 for x in latest if x and x["status"] == "完了" and x["result"] == "不合格")
+    n_block = sum(1 for x in latest if x and x["status"] != "完了")
+    n_none = sum(1 for x in latest if not x)
+    dates = sorted(x["executed_at"][:10] for x in project["runs"] if x.get("executed_at"))
     wb = Workbook()
 
     # 1. 表紙
     ws = wb.active
     ws.title = "表紙"
-    ws["A1"] = "受入テスト仕様書"
+    ws["A1"] = "受入テスト仕様書 兼 成績書"
     ws["A1"].font = Font(size=20, bold=True)
     rows = [["案件", f"{project['project']['id']} {project['project']['name']}"],
             ["対象製品", f"{prod.get('name', '未登録')}（{prod.get('vendor', '')}）"],
             ["版・プラン", f"版：{prod.get('edition') or '未記入'}／プラン：{prod.get('plan') or '未記入'}"],
             ["対象業務", project["project"].get("target_business", "")],
             ["状態", f"テスト {len(tests)}件（確定 {len(tests) - draft}件・下書き {draft}件）"],
+            ["テスト結果（最新）", f"合格 {n_ok}件／不合格 {n_ng}件／実施不能 {n_block}件（合否に数えない）／未実施 {n_none}件"],
+            ["実施期間", f"{dates[0]}～{dates[-1]}（実施 {len(project['runs'])}回・再テストを含む）" if dates else "未実施"],
             ["出力日時", now_iso()], ["作成者（記入）", ""], ["確認者（記入）", ""], ["承認者（記入）", ""],
             ["作成", "ReadyProof AI（下書きを人が確認・確定したもの）"]]
     if project["project"].get("demo_id"):
         rows.append(["注意", "架空のデモデータです"])
     _table(ws, 3, ["項目", "内容"], rows, [20, 90])
-    for row in range(10, 13):
+    for row in range(12, 15):  # 作成者・確認者・承認者の記入欄
         ws.cell(row=row, column=2).fill = INPUT_FILL
 
     # 2. 概要
@@ -330,7 +338,9 @@ def acceptance_test_workbook(project: dict) -> bytes:
         ["対象外", "製品の内部設計・性能・セキュリティ診断など、自社の要件に含まれないもの。"],
         ["テスト環境", f"{prod.get('name', '対象製品')}（版：{prod.get('edition') or '未記入'}／プラン：{prod.get('plan') or '未記入'}）の検証環境。"
                        "本番データは使わず、テスト用アカウントとテストデータを用意する。"],
-        ["実施の手順", "① 事前条件を整える ② テストデータを使って手順どおりに操作する ③ 期待結果と比べ、黄色の欄に結果を記入する。"],
+        ["実施の手順", "① 事前条件を整える ② テストデータを使って手順どおりに操作する ③ 期待結果と比べて結果を記録する。"
+                       "アプリの画面で記録した結果は、この Excel に自動で入る（テスト成績書として保存できる）。"
+                       "アプリを使わずに記録する場合は、まだ結果のない行の黄色の欄に記入する。"],
         ["合否判定基準", "期待結果のすべてを満たした場合のみ合格。1点でも異なれば不合格とし、実際の結果と証跡（画面の記録）を残す。"
                          "試せなかった場合は「実施不能」とし、理由を書く（合否に数えない）。"],
         ["不合格のとき", "不具合か、合意済みの仕様か、追加要望かを確認してから、ベンダーへの依頼（改修・設定変更・調査）にする。"
@@ -364,9 +374,10 @@ def acceptance_test_workbook(project: dict) -> bytes:
                     "期待結果", "合否判定基準", "根拠", "重要度", "未確定事項", "実施日", "実施者", "結果（合格／不合格／実施不能）",
                     "実際の結果", "証跡", "不具合・依頼ID"],
            rows, [5, 8, 5, 11, 12, 34, 10, 24, 30, 24, 36, 36, 28, 30, 6, 26, 12, 10, 14, 30, 16, 12])
-    for row in range(r0 + 1, r0 + 1 + len(rows)):
-        for col in range(17, 23):
-            ws.cell(row=row, column=col).fill = INPUT_FILL
+    for i, row in enumerate(range(r0 + 1, r0 + 1 + len(rows))):
+        if not rows[i][16]:  # まだ結果のない行だけ、記入欄として黄色にする
+            for col in range(17, 23):
+                ws.cell(row=row, column=col).fill = INPUT_FILL
 
     # 4. 要件との対応表（トレーサビリティ）
     ws = wb.create_sheet("要件との対応表")

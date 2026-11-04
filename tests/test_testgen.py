@@ -67,3 +67,24 @@ def test_spec_workbook_sheets_and_traceability():
         assert col in head
     text = "\n".join(str(c.value) for row in wb["要件との対応表"].iter_rows() for c in row if c.value)
     assert "REQ-003" in text and "テストなし" in text  # 未確定の要件はテストなしとして見える
+
+
+def test_workbook_works_as_test_report():
+    """アプリで記録した結果が Excel に入り、テスト成績書として残せる。結果のある行は記入欄（黄色）にしない。"""
+    p = build("demo1")  # 筋書き版：T-001 合格、T-002 不合格→再テスト合格
+    wb = openpyxl.load_workbook(io.BytesIO(acceptance_test_workbook(p)))
+    assert wb["表紙"]["A1"].value == "受入テスト仕様書 兼 成績書"
+    cover = {r[0]: r[1] for r in wb["表紙"].iter_rows(values_only=True) if r[0]}
+    assert cover["テスト結果（最新）"].startswith("合格 2件／不合格 0件")
+    assert "再テストを含む" in cover["実施期間"]
+    ws = wb["テスト項目"]
+    rows = list(ws.iter_rows())
+    head_i = next(i for i, r in enumerate(rows) if r[0].value == "No")
+    head = [c.value for c in rows[head_i]]
+    res_col = head.index("結果（合格／不合格／実施不能）")
+    by_id = {r[1].value: r for r in rows[head_i + 1:]}
+    assert by_id["T-002"][res_col].value == "合格"  # 最新の結果
+    assert by_id["T-002"][res_col].fill.fgColor.rgb != "00FFF8DC"
+    t3 = by_id["T-003"][res_col]
+    assert t3.value in (None, "") and t3.fill.fgColor.rgb == "00FFF8DC"  # 未実施は記入欄
+    assert len(list(wb["実施記録"].iter_rows())) > 3

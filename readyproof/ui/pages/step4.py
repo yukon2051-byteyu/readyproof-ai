@@ -17,7 +17,7 @@ XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
 def render():
     p = header("tests", "受入テスト",
-               "自社の要件を満たすかを、実際の製品で人が試すためのテストです。テストを確定し、試した結果を記録すると、受入テスト仕様書（Excel）に反映されます。")
+               "自社の要件を満たすかを、実際の製品で人が試すためのテストです。テストを確定し、試した結果を記録すると、受入テスト仕様書 兼 成績書（Excel）に反映されます。")
     if not p:
         return
     ts = [t for t in p["tests"] if t["status"] != "廃止"]
@@ -29,8 +29,8 @@ def render():
         {"label": "まだ試していない", "value": f"{len(m['not_run'])}件", "color": "#5B6574"},
         {"label": "試せなかった", "value": f"{len(m['blocked'])}件", "note": "合否には数えない", "color": "#B45309"},
     ])
-    st.download_button("受入テスト仕様書（Excel）をダウンロード", acceptance_test_workbook(p), type="primary",
-                       file_name=f"{p['project']['id']}_受入テスト仕様書.xlsx", mime=XLSX, icon=":material/download:")
+    st.download_button("受入テスト仕様書・成績書（Excel）をダウンロード", acceptance_test_workbook(p), type="primary",
+                       file_name=f"{p['project']['id']}_受入テスト仕様書・成績書.xlsx", mime=XLSX, icon=":material/download:")
     if not state.is_demo():
         ai_tests_box(p)
 
