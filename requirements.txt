@@ -1,4 +1,5 @@
 # ReadyProof AI（Python 3.12 で動作確認）
+# 公開環境（Streamlit Community Cloud）はこのファイルを使う。ローカル文字起こしは含めない（重いため）
 streamlit==1.66.1
 pandas==3.1.0
 openpyxl==3.1.5
@@ -8,5 +9,3 @@ pypdf==6.21.4
 av==19.0.2
 numpy==2.5.4
 anthropic==2.4.0
-# ローカル文字起こし（録画を使う場合）。初回にモデル（small: 約480MB）を自動ダウンロード
-faster-whisper==1.2.1

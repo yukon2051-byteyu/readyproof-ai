@@ -1,0 +1,4 @@
+# 手元のPCで録画のローカル文字起こしも使う場合
+# 初回にモデル（small: 約480MB）を自動ダウンロード
+-r requirements.txt
+faster-whisper==1.2.1

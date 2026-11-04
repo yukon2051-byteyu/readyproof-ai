@@ -27,7 +27,7 @@ def local_whisper_available() -> tuple[bool, str]:
         return True, ""
     except Exception:
         return False, ("faster-whisper がインストールされていません。"
-                       "`pip install faster-whisper` 後に再起動してください（初回はモデルを自動ダウンロードします）。")
+                       "手元のPCで `pip install -r requirements-local.txt` 後に再起動してください。公開環境では、会議ツールの文字起こし（VTT/SRT）を読み込んでください。")
 
 
 _MODEL_CACHE: dict = {}
