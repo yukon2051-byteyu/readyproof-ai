@@ -108,7 +108,7 @@ RP_USAGE_LEDGER_PATH = "data/usage_ledger.jsonl"
 $env:RP_RUN_SLOW="1"; .venv\Scripts\python -m pytest -q   # 実音声のローカル文字起こしを含める
 ```
 
-結果と未検証範囲は [docs/test_results.md](docs/test_results.md) を参照してください（2026-11-04 時点：101件合格）。
+結果と未検証範囲は [docs/test_results.md](docs/test_results.md) を参照してください（2026-11-05 時点：122件合格・1件スキップ）。
 
 ## 使用技術
 
@@ -133,8 +133,9 @@ Python 3.12 / Streamlit 1.56（公開環境での不具合回避のため固定�
 - [docs/transcription_options.md](docs/transcription_options.md) 文字起こし方式の比較
 - [docs/design_research.md](docs/design_research.md) デザイン調査
 - [docs/test_results.md](docs/test_results.md) テスト結果・未検証範囲・既知の問題
-- [docs/deploy.md](docs/deploy.md) Streamlit Community Cloud への公開手順
+- [docs/deploy.md](docs/deploy.md) 公開手順（Hugging Face Spaces）・AIを使う設定・トークンの差し替え
 - [docs/backlog.md](docs/backlog.md) 残件・今後の課題
+- [docs/portfolio_notes.md](docs/portfolio_notes.md) ポートフォリオ説明メモ（設計判断・実測値・作成者とAIの役割分担）
 
 ## 改善の余地
 

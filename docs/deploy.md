@@ -12,6 +12,18 @@
 - Spaces はアプリを埋め込み表示するため、ファイルのアップロードが動くよう XSRF 対策を無効にしている（認証のない公開デモ用途に限定）
 - 公開版には APIキーを設定しない（有料AIは停止）。実在の社内資料をアップロードしないよう案内する
 
+## 自社の案件でAIを使う設定（公開サイト）
+
+1. `scripts/setup_hf_ai.py <ユーザー名>`（AIパスワードは環境変数 `RP_AI_PASSWORD`）：利用記録の非公開の置き場所（dataset `<ユーザー名>/readyproof-usage`）を作り、Space の秘密情報（APIキー・AIパスワード・記録先・書き込み用トークン）を登録する。2026-11-04 に利用者が実行済み。
+2. 書き込み用トークン（`RP_HF_TOKEN`）を、権限を絞ったものに差し替える（推奨。最初の登録ではアカウント全体に書ける管理用トークンを使ったため）：
+   1. Hugging Face の Settings → Access Tokens → **Create new token** → **Fine-grained** を選ぶ
+   2. 名前：`readyproof-usage-writer`
+   3. 「Repositories permissions」で `<ユーザー名>/readyproof-usage` だけを選び、**Read access** と **Write access**（contents）にチェック。ほかの権限は付けない
+   4. 作成したトークンをコピーし、VS Code のターミナルで実行（トークンはチャットに貼らない）：
+      `$env:RP_USAGE_TOKEN="（コピーしたトークン）"; .venv\Scripts\python scripts\set_usage_token.py <ユーザー名>`
+   5. スクリプトは、Fine-grained でなければ中止し、新しいトークンで記録の書き込み・読み戻しを確認してから Space に登録する
+   6. 終わったら、ターミナルを閉じる（環境変数を残さない）
+
 ## 以前の公開先：Streamlit Community Cloud（断念）
 以下は当初の手順。画面が表示されなかった経緯は `test_results.md` 2-3 を参照。
 
