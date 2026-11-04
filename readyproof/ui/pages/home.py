@@ -13,12 +13,9 @@ import streamlit as st
 from ...config import APP_NAME_JA
 from ...core import new_project
 from ...demos.builder import DEMOS, build
-from ...export.excel import acceptance_test_workbook
 from .. import state
 from ..components import start_tour
 from ..theme import esc, section
-
-XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
 # 見出し帯のモチーフ：「根拠を確かめた書類」（書類＋引用の行＋チェック）
 MOTIF = (
@@ -42,12 +39,6 @@ ROLES = [
     ("AI", "AI", "照合・診断・テスト仕様書", "資料と自社のルールの照合・診断、ベンダーへの質問、依頼書とテスト仕様書"),
     ("人", "人", "判断・テスト", "AIの診断の確認、導入判断、実機でのテスト"),
 ]
-
-
-@st.cache_data(show_spinner=False)
-def sample_report() -> bytes:
-    """成果物の見本（デモ1の受入テスト仕様書）。架空データ・料金なし。"""
-    return acceptance_test_workbook(build("demo1"))
 
 
 def _grid(items: list[str], cols: int | None = None) -> None:
@@ -81,12 +72,10 @@ def render():
 
     # ---- 3分デモ：その場で選んで始める ----
     titles = {d["id"]: d["title"] for d in DEMOS}
-    c1, c2, c3 = st.columns([1.5, 1.3, 1], vertical_alignment="bottom")
+    c1, c2 = st.columns([1.5, 1], vertical_alignment="bottom")
     pick = c1.selectbox("見たいデモを選ぶ", list(titles.keys()), format_func=lambda i: titles[i], key="demo_pick")
     if c2.button("3分デモを始める", type="primary", icon=":material/play_arrow:", width="stretch", key="open_main"):
         _open_demo(pick)
-    c3.download_button("見本：受入テスト仕様書", sample_report(), file_name="ReadyProof_サンプル_受入テスト仕様書.xlsx",
-                       mime=XLSX, icon=":material/download:", width="stretch")
     st.caption("架空の会社・資料で、約3分。料金はかかりません。　" + "　".join(
         f"・{d['title']}：{d['theme']}" for d in DEMOS if d["id"] == pick))
 
