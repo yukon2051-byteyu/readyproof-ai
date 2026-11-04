@@ -1,0 +1,13 @@
+[theme]
+base = "light"
+primaryColor = "#1F4E8C"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F3F6FA"
+textColor = "#1A2433"
+
+[server]
+# 資料・録画のアップロード上限（MB）。アプリ側の上限（readyproof/config.py）も別にかかる
+maxUploadSize = 200
+
+[browser]
+gatherUsageStats = false

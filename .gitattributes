@@ -1,0 +1,8 @@
+# 文字ファイルは LF で保存し、資料・動画などは改行変換しない（破損防止）
+* text=auto eol=lf
+*.pdf binary
+*.pptx binary
+*.docx binary
+*.xlsx binary
+*.mp4 binary
+*.png binary

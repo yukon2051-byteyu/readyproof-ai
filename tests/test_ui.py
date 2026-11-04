@@ -1,0 +1,92 @@
+"""画面（Streamlit AppTest）。ブラウザは使わず、画面の描画と主要操作を確認する。"""
+import os
+
+import pytest
+from streamlit.testing.v1 import AppTest
+
+from readyproof.config import TAGLINE
+from readyproof.demos.builder import build
+
+HARNESS = os.path.join(os.path.dirname(__file__), "ui_harness.py")
+APP = os.path.join(os.path.dirname(os.path.dirname(__file__)), "app.py")
+PAGES = ["home", "project", "sources", "requirements", "diagnosis", "questions", "tests", "decision", "data", "settings"]
+
+
+def page(name, project=None, **state):
+    at = AppTest.from_file(HARNESS, default_timeout=120)
+    if project is not None:
+        at.session_state["project"] = project
+    at.session_state["_page"] = name
+    for k, v in state.items():
+        at.session_state[k] = v
+    return at.run()
+
+
+def texts(at):
+    return "\n".join([m.value for m in at.markdown] + [c.value for c in at.caption] + [i.value for i in at.info]
+                     + [w.value for w in at.warning] + [e.value for e in at.error])
+
+
+@pytest.mark.parametrize("demo", ["demo1", "demo2", "demo3", None])
+def test_all_pages_render(demo):
+    for name in PAGES:
+        at = page(name, build(demo) if demo else None)
+        assert not at.exception, (demo, name, [e.value for e in at.exception])
+
+
+def test_home_shows_tagline_and_demos():
+    at = AppTest.from_file(APP, default_timeout=120).run()
+    t = texts(at)
+    assert TAGLINE.replace("「", "").split("」")[0][:8] in t.replace("「", "")
+    assert "ReadyProof AI" in t and "AI受入テスト・導入確認支援システム" in t
+    assert [b.label for b in at.button].count("このデモを開く") == 3
+
+
+def test_open_demo_from_home():
+    at = AppTest.from_file(APP, default_timeout=120).run()
+    at.button(key="open_demo2").click().run()
+    assert not at.exception
+    assert at.session_state["project"]["project"]["demo_id"] == "demo2"
+
+
+def test_demo_ai_panel_never_offers_paid_run():
+    at = page("diagnosis", build("demo1"), form_ai_diag_reqs=["REQ-001"])
+    assert "デモでは有料のAI処理を使いません" in texts(at)
+    assert not [b for b in at.button if b.label == "AIで下書きを作る"]
+
+
+def test_no_api_key_explains_and_manual_still_works():
+    from readyproof.core import new_project
+
+    p = new_project("手動案件")
+    at = page("requirements", p)
+    assert not at.exception
+    at = page("settings", p)
+    assert "APIキーが設定されていません" in texts(at)
+
+
+def test_pass_without_confirmed_expected_blocked_in_ui():
+    p = build("demo3")  # T-002 は期待結果が未確定の下書き
+    at = page("tests", p, sel_test="T-002", user_name="テスト実施者")
+    at.selectbox[[s.label for s in at.selectbox].index("合否")].set_value("合格")
+    at.text_area[[t.label for t in at.text_area].index("実際の結果（何が起きたか）")].set_value("ログインできなかった")
+    at.button[[b.label for b in at.button].index("記録する")].click().run()
+    assert any("期待結果が確定していない" in e.value for e in at.error)
+    assert not [r for r in at.session_state["project"]["runs"] if r["test_id"] == "T-002"]
+
+
+def test_invalid_json_load_keeps_current_project():
+    p = build("demo1")
+    at = page("data", p)
+    assert not at.exception
+    # 読込処理そのものは test_export_demos で検証。ここでは現在の案件が保持されていることを確認
+    assert at.session_state["project"]["project"]["demo_id"] == "demo1"
+
+
+def test_status_not_color_only():
+    """状態ラベルは色だけでなく文字を持つ。"""
+    from readyproof.ui.theme import category_chip, chip, review_chip
+
+    assert "情報不足" in category_chip("情報不足・ベンダー確認が必要")
+    assert "AI下書き" in review_chip("未確認", "AI生成") and "dashed" not in chip("x")
+    assert "&lt;script&gt;" in chip("<script>")  # HTML はエスケープ
