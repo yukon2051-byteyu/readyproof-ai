@@ -76,7 +76,7 @@ def header(key: str, title: str, desc: str) -> dict | None:
     if not p:
         return None
     stepper(key)
-    st.markdown(f'<div class="rp-title">{esc(title)}</div><div class="rp-desc">{esc(desc)}</div>',
+    st.markdown(f'<div class="rp-title">{esc(title)}</div><div class="rp-desc">{"<br>".join(esc(x) for x in desc.split(chr(10)))}</div>',
                 unsafe_allow_html=True)
     return p
 
