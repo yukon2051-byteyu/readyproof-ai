@@ -29,6 +29,10 @@ def no_paid_api(monkeypatch):
 
     monkeypatch.setattr(anthropic, "Anthropic", boom)
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    # 手元の .streamlit/secrets.toml にある本物のキーをテストで読まない（環境変数だけを見る）
+    import readyproof.ai.client as client
+
+    monkeypatch.setattr(client, "get_api_key", lambda: os.environ.get("ANTHROPIC_API_KEY"))
 
 
 @pytest.fixture
