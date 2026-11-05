@@ -1,6 +1,6 @@
 # ReadyProof AI（AI受入テスト・導入確認支援システム）
 
-> 「うちの会社で使える？」に答えるAI
+> その製品、自社で使える？
 
 **公開デモ：https://yukon2051-readyproof-ai.hf.space** （架空データの3件のデモ・料金なし。自分の案件でAIを使うにはAIパスワードが必要です）
 
@@ -108,7 +108,7 @@ RP_USAGE_LEDGER_PATH = "data/usage_ledger.jsonl"
 $env:RP_RUN_SLOW="1"; .venv\Scripts\python -m pytest -q   # 実音声のローカル文字起こしを含める
 ```
 
-結果と未検証範囲は [docs/test_results.md](docs/test_results.md) を参照してください（2026-11-05 時点：138件合格・1件スキップ、ブラウザの E2E テスト5件合格）。
+結果と未検証範囲は [docs/test_results.md](docs/test_results.md) を参照してください（2026-11-06 時点：139件合格・1件スキップ、ブラウザの E2E テスト13件合格）。
 
 ## 使用技術
 

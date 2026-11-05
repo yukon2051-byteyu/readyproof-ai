@@ -1,16 +1,18 @@
-"""トップページ：3分で価値が伝わる構成。
+"""トップページ：何のアプリかを伝え、すぐにデモを試せる構成。
 
-1. 見出し帯（何をするアプリか）
-2. 4段階（入力2つ → 出力2つ）と、3分デモの開始ボタン
-3. できること・役割分担
-4. 3件のデモの選択
-5. 自社の案件で試してみる
+1. 見出し帯（左：何をするアプリか／右：照合の流れを示す説明図）
+2. 3分デモの選択と開始
+3. AIと人の役割分担
+4. 使い方の流れ
+5. 自社の案件で試す（AIパスワードが必要）
+
+見出し帯の図は説明用の静的なイメージで、実際の診断結果ではない。件数や判定は載せない。
+見出し帯の2つのボタンはページ内リンクで、下のセクションへ移動するだけ（デモを勝手に始めない）。
 """
 from __future__ import annotations
 
 import streamlit as st
 
-from ...config import APP_NAME_JA
 from ...ai.client import valid_access_codes
 from ...core import new_project
 from ...demos.builder import DEMOS, build
@@ -18,19 +20,34 @@ from .. import state
 from ..components import start_tour
 from ..theme import esc, section
 
-# 見出し帯のモチーフ：「根拠を確かめた書類」（書類＋引用の行＋チェック）
-MOTIF = (
-    '<svg class="motif" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">'
-    '<rect x="38" y="18" width="104" height="136" rx="12" fill="none" stroke="#38BDF8" stroke-opacity=".35" stroke-width="4"/>'
-    '<rect x="54" y="42" width="56" height="7" rx="3.5" fill="#FFFFFF" fill-opacity=".35"/>'
-    '<rect x="54" y="60" width="72" height="7" rx="3.5" fill="#FFFFFF" fill-opacity=".22"/>'
-    '<rect x="54" y="78" width="64" height="7" rx="3.5" fill="#FFFFFF" fill-opacity=".22"/>'
-    '<rect x="50" y="96" width="4" height="26" rx="2" fill="#38BDF8" fill-opacity=".8"/>'
-    '<rect x="60" y="100" width="58" height="6" rx="3" fill="#38BDF8" fill-opacity=".45"/>'
-    '<rect x="60" y="112" width="44" height="6" rx="3" fill="#38BDF8" fill-opacity=".45"/>'
-    '<circle cx="142" cy="146" r="34" fill="#38BDF8"/>'
-    '<path d="M126 147 l11 11 l22 -24" fill="none" stroke="#14263F" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>'
-    '</svg>')
+ANCHOR_DEMO = "rp-demo"
+ANCHOR_OWN = "rp-own"
+
+
+def _svg(body: str, cls: str = "ic") -> str:
+    return f'<svg class="{cls}" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">{body}</svg>'
+
+
+STROKE = 'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"'
+IC_DOC = _svg(f'<path d="M6 3h8l4 4v14H6z" {STROKE}/><path d="M14 3v4h4M9 12h6M9 16h6" {STROKE}/>')
+IC_RULE = _svg(f'<path d="M5 6h14M5 12h14M5 18h9" {STROKE}/>')
+IC_CHART = _svg(f'<path d="M5 20V4h14v16zM9 16v-4M12 16V9M15 16v-6" {STROKE}/>')
+IC_CHECK = _svg(f'<circle cx="12" cy="12" r="9" {STROKE}/><path d="M8 12.5l2.7 2.7L16 9.5" {STROKE}/>', "ic ok")
+IC_WARN = _svg(f'<path d="M12 4l9 16H3z" {STROKE}/><path d="M12 10v4M12 17h.01" {STROKE}/>', "ic warn")
+IC_LIST = _svg(f'<path d="M9 7h11M9 12h11M9 17h11" {STROKE}/><path d="M4.5 7h.01M4.5 12h.01M4.5 17h.01" {STROKE}/>', "ic list")
+IC_LINK = ('<svg class="link" viewBox="0 0 200 34" preserveAspectRatio="none" fill="none" aria-hidden="true" focusable="false">'
+           '<path d="M50 0v12q0 6 6 6h88q6 0 6-6V0M100 18v14" stroke="currentColor" stroke-width="1.6" vector-effect="non-scaling-stroke"/>'
+           '</svg>')
+
+HERO_VISUAL = (
+    '<div class="viz">'
+    f'<div class="docs"><div class="doc">{IC_DOC}<span>製品資料</span></div><div class="doc">{IC_RULE}<span>社内ルール</span></div></div>'
+    f'{IC_LINK}'
+    f'<div class="diag"><div class="ttl">{IC_CHART}<span>適合性診断</span></div>'
+    '<div class="note">診断結果のイメージ</div>'
+    '<div class="lead">適合性・確認事項を整理</div>'
+    f'<ul><li>{IC_CHECK}適合項目</li><li>{IC_WARN}要確認事項</li><li>{IC_LIST}受入テスト項目</li></ul>'
+    '</div></div>')
 
 FLOW = [("入力1", "製品の資料", "提案書・機能一覧・マニュアル・営業説明など"),
         ("入力2", "自社のルール", "質問に答え、ルール・例外・条件をまとめる"),
@@ -38,13 +55,9 @@ FLOW = [("入力1", "製品の資料", "提案書・機能一覧・マニュア�
         ("出力2", "受入テスト", "実機で確認すべき項目をテスト仕様書に"),
         ("判断", "導入判断", "テスト結果と残った問題を見て、人が導入を決める")]
 ROLES = [
-    ("AI", "AI", "照合・診断・テスト仕様書", "資料と自社のルールの照合・診断、ベンダーへの質問、依頼書とテスト仕様書"),
-    ("人", "人", "判断・テスト", "AIの診断の確認、導入判断、実機でのテスト"),
+    ("AI", "AIが行うこと", "資料の照合・診断、確認事項やテスト仕様書案の作成"),
+    ("人", "人が行うこと", "AIの結果を確認し、実機でテストして最終判断"),
 ]
-
-
-def _grid(items: list[str], cols: int | None = None) -> None:
-    st.markdown(f'<div class="rp-grid" style="--cols:{cols or len(items)}">{"".join(items)}</div>', unsafe_allow_html=True)
 
 
 def _open_demo(demo_id: str) -> None:
@@ -54,37 +67,52 @@ def _open_demo(demo_id: str) -> None:
     start_tour(demo_id)
 
 
-def render():
+def _hero() -> None:
     st.markdown(
-        f'<div class="rp-hero">{MOTIF}<div class="inner"><div class="eyebrow">{esc(APP_NAME_JA)}</div>'
-        '<div class="name">ReadyProof <span>AI</span></div>'
-        '<div class="tag"><em>「うちの会社で使える？」</em>に答える<em>AI</em></div>'
-        '<div class="desc">製品の情報と自社の業務ルールを照合し、受入テスト・導入判断までつなげます。</div>'
-        '</div></div>', unsafe_allow_html=True)
+        '<div class="rp-herowrap"><div class="rp-hero"><div class="copy">'
+        '<div class="eyebrow">AI受入テスト・導入確認支援</div>'
+        '<div class="name">ReadyProof AI</div>'
+        '<div class="tag" role="heading" aria-level="1"><span>その製品、</span><span><em>自社</em>で使える？</span></div>'
+        '<p class="desc"><span>製品資料と社内ルールを照合し、</span><span>導入判断と受入テストの準備を支援。</span></p>'
+        '<p class="sub"><span>AIが確認事項を整理し、</span><span>最終的な導入判断は人が行います。</span></p>'
+        f'<div class="cta"><a class="btn primary" href="#{ANCHOR_DEMO}">3分デモを体験する</a>'
+        f'<a class="btn ghost" href="#{ANCHOR_OWN}">自社の案件で試す</a></div>'
+        f'</div>{HERO_VISUAL}</div></div>', unsafe_allow_html=True)
 
-    section("AIと人の役割分担", top="-7px", gold=True)  # 上の余白を0.7cm詰める
-    _grid([f'<div class="rp-card role"><div class="t"><span class="rp-num">{esc(m)}</span>{esc(d)}</div>'
-           f'<div class="b">{esc(x)}</div></div>' for m, w, d, x in ROLES])
 
-    # ---- 3分デモ：開始 → 流れ → 成果物 ----
-    section("使い方の流れ", top="4.3px")  # 上の余白：当初より0.4cm短い（0.7cm詰めて0.3cm戻す）
-    _grid([f'<div class="rp-card"><div class="t"><span class="rp-num">{i + 1}</span>{esc(t)}</div>'
-           f'<div class="m in" style="margin-top:0;padding-top:0">{esc(io)}</div>'
-           f'<div class="b">{esc(d)}</div></div>'
-           for i, (io, t, d) in enumerate(FLOW)])
-
-    # ---- 3分デモ：その場で選んで始める ----
+def _demo() -> None:
+    section("まずは3分デモで体験", size="md", anchor=ANCHOR_DEMO)
+    # デモは保存済みの結果を表示するだけで、AIパスワードを確認しない（_open_demo を参照）
+    st.markdown("<div class='rp-lead'>サンプルデータで、診断から導入判断までの流れを確認できます。パスワードは不要です。</div>",
+                unsafe_allow_html=True)
     titles = {d["id"]: d["title"] for d in DEMOS}
     c1, c2 = st.columns([1.5, 1], vertical_alignment="bottom")
     pick = c1.selectbox("見たいデモを選ぶ", list(titles.keys()), format_func=lambda i: titles[i], key="demo_pick")
     if c2.button("3分デモを始める", type="primary", icon=":material/play_arrow:", width="stretch", key="open_main"):
         _open_demo(pick)
     d = next(x for x in DEMOS if x["id"] == pick)
-    st.markdown(f'<div class="rp-small">{esc(d["title"])}：{esc(d["theme"])}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="rp-lead">{esc(d["title"])}：{esc(d["theme"])}</div>', unsafe_allow_html=True)
 
-    # ---- 自分の案件 ----
-    section("自社の案件で試してみる", big=True)
-    st.markdown("<div class='rp-small'>AIパスワードが必要です（AIの実行には料金がかかるため）。</div>", unsafe_allow_html=True)
+
+def _roles() -> None:
+    section("AIと人の役割分担", size="md")
+    cards = "".join(f'<div class="rp-card role"><div class="t"><span class="rp-num">{esc(m)}</span>{esc(t)}</div>'
+                    f'<div class="b">{esc(x)}</div></div>' for m, t, x in ROLES)
+    st.markdown(f'<div class="rp-grid" style="--cols:2">{cards}</div>', unsafe_allow_html=True)
+
+
+def _flow() -> None:
+    section("使い方の流れ", size="md")
+    cards = "".join(f'<div class="rp-card"><div class="t"><span class="rp-num">{i + 1}</span>{esc(t)}</div>'
+                    f'<div class="m in">{esc(io)}</div><div class="b">{esc(d)}</div></div>'
+                    for i, (io, t, d) in enumerate(FLOW))
+    st.markdown(f'<div class="rp-flow5">{cards}</div>', unsafe_allow_html=True)
+
+
+def _own() -> None:
+    section("自社の案件で試す", size="md", anchor=ANCHOR_OWN)
+    st.markdown("<div class='rp-lead'>AIの実行には料金がかかるため、AIパスワードが必要です（デモには必要ありません）。</div>",
+                unsafe_allow_html=True)
     c1, c2, c3 = st.columns([2, 1.3, 1], vertical_alignment="bottom")
     name = c1.text_input("案件名", placeholder="例：勤怠管理サービスの導入", key="new_project_name")
     code = c2.text_input("AIパスワード", type="password", key="home_ai_pw", value=st.session_state.get("access_code", ""))
@@ -97,3 +125,11 @@ def render():
         state.set_project(new_project(name.strip()))
         state.flash("新しい案件を作成しました。まず製品の情報と資料を入れてください。")
         state.goto("input1")
+
+
+def render():
+    _hero()
+    _demo()
+    _roles()
+    _flow()
+    _own()

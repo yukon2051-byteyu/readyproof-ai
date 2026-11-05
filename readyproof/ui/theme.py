@@ -87,25 +87,67 @@ div[class*="st-key-rpbox_"] {{ padding: 14px 18px; }}
   background: {NAVY}; color: {ACCENT}; font-size: .85rem; font-weight: 800; flex: none; }}
 .rp-card .b {{ font-size: .9rem; color: #1F2937; }}
 .rp-card .m {{ font-size: .8rem; color: {MUTED}; margin-top: auto; padding-top: 6px; }}
-.rp-card.role {{ background: #FBF3DC; border-color: #EBD9A6; border-top-color: #E0B84A; }}
-.rp-card.role .t {{ font-size: .98rem; }}
+.rp-card.role {{ background: #fff; border-top: 1px solid {BORDER}; padding: 12px 16px; }}
+.rp-card.role .t {{ font-size: 1rem; }}
+.rp-card.role .rp-num {{ background: #E3F2FB; color: #1D5FA8; }}
+.rp-card.role .b {{ font-size: .95rem; line-height: 1.6; }}
 .rp-card ul {{ margin: 0 0 0 1.1rem; padding: 0; font-size: .86rem; color: #1F2937; }}
 
 /* トップページの見出し帯（紺のグラデーション＋右側に「根拠を確かめる書類」のモチーフ） */
-.rp-hero {{ position: relative; overflow: hidden; border-radius: 14px; padding: 28px 32px 26px; margin: 0 0 18px;
-  background: linear-gradient(120deg, {NAVY} 0%, #1B3A63 55%, #1F4E8C 100%); }}
-.rp-hero .motif {{ position: absolute; right: 22px; top: 14px; width: 150px; height: 150px;
-  opacity: .9; pointer-events: none; }}
-.rp-hero .inner {{ position: relative; max-width: 78%; }}
-.rp-hero .eyebrow {{ display: inline-block; font-size: .82rem; color: {NAVY}; background: {ACCENT}; font-weight: 700;
-  padding: 2px 10px; border-radius: 999px; letter-spacing: .03em; }}
-.rp-hero .name {{ font-size: 2.7rem; font-weight: 800; color: #fff; line-height: 1.15; margin: 10px 0 10px; }}
-.rp-hero .name span {{ color: {ACCENT}; }}
-.rp-hero .tag {{ font-size: 1.3rem; font-weight: 700; color: #fff; line-height: 1.5; }}
+/* トップの見出し帯：左に文章、右に説明図。メイン領域の幅で切り替える（サイドバーの開閉に対応するためコンテナクエリ） */
+.rp-herowrap {{ container-type: inline-size; margin: 0 0 8px; }}
+.rp-hero {{ display: grid; grid-template-columns: minmax(0, 55fr) minmax(0, 45fr); gap: 28px; align-items: center;
+  min-height: 330px; box-sizing: border-box; padding: 28px 32px; border-radius: 18px; color: #fff; overflow: hidden;
+  background: linear-gradient(120deg, #0F2340 0%, #14315A 55%, #1D4E89 100%); }}
+.rp-hero .copy {{ min-width: 0; }}
+.rp-hero .eyebrow {{ display: inline-block; font-size: .85rem; font-weight: 700; color: #BEEBFF; border: 1px solid #5CC8F5;
+  padding: 3px 12px; border-radius: 999px; line-height: 1.5; }}
+.rp-hero .name {{ font-size: 1.1rem; font-weight: 700; color: #E6EDF6; margin: 12px 0 2px; line-height: 1.4; }}
+.rp-hero .tag {{ font-size: clamp(30px, 4.6cqw, 44px); font-weight: 800; color: #fff; line-height: 1.3; margin: 0 0 12px; }}
+.rp-hero .tag span {{ display: inline-block; }}
 .rp-hero .tag em {{ font-style: normal; color: {ACCENT}; }}
-.rp-hero .desc {{ font-size: .95rem; color: #E0B84A; font-weight: 500; margin-top: 10px; }}
-@media (min-width: 1100px) {{ .rp-hero .desc {{ white-space: nowrap; }} .rp-hero .inner {{ max-width: 100%; }}
-  .rp-hero .tag, .rp-hero .name, .rp-hero .eyebrow {{ max-width: 76%; }} }}
+.rp-hero .desc {{ font-size: 1rem; line-height: 1.6; color: #F2F6FB; margin: 0 0 6px; }}
+.rp-hero .sub {{ font-size: .94rem; line-height: 1.6; color: #D5E0EE; margin: 0; }}
+.rp-hero .desc span, .rp-hero .sub span {{ display: inline-block; }}
+.rp-hero .cta {{ display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }}
+.rp-hero a.btn {{ display: inline-flex; align-items: center; justify-content: center; min-height: 44px; box-sizing: border-box;
+  padding: 8px 18px; border-radius: 10px; font-size: 1rem; font-weight: 700; text-decoration: none; line-height: 1.4; }}
+.rp-hero a.btn.primary {{ background: {ACCENT}; color: #0F2340 !important; border: 1px solid {ACCENT}; }}
+.rp-hero a.btn.primary:hover {{ background: #7DD3FC; border-color: #7DD3FC; }}
+.rp-hero a.btn.ghost {{ background: transparent; color: #fff !important; border: 1px solid #C7D5E6; }}
+.rp-hero a.btn.ghost:hover {{ background: rgba(255, 255, 255, .1); }}
+.rp-hero a.btn:focus-visible {{ outline: 3px solid #fff; outline-offset: 2px; }}
+.rp-hero .viz {{ min-width: 0; color: {NAVY}; }}
+.rp-hero .viz .ic {{ flex: none; width: 22px; height: 22px; }}
+.rp-hero .viz .docs {{ display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }}
+.rp-hero .viz .doc {{ display: flex; align-items: center; gap: 8px; background: #F4F8FD; border: 1px solid #D6E2F0; border-radius: 10px;
+  padding: 10px 12px; font-size: .95rem; font-weight: 700; box-shadow: 0 2px 6px rgba(8, 20, 40, .25); }}
+.rp-hero .viz .link {{ display: block; width: 100%; height: 26px; color: #8FD4F5; }}
+.rp-hero .viz .diag {{ background: #fff; border: 1px solid #D6E2F0; border-radius: 12px; padding: 14px 16px;
+  box-shadow: 0 4px 12px rgba(8, 20, 40, .28); }}
+.rp-hero .viz .ttl {{ display: flex; align-items: center; gap: 8px; font-size: 1.1rem; font-weight: 800; line-height: 1.4; }}
+.rp-hero .viz .note {{ font-size: .8rem; font-weight: 700; color: #1F5E8C; margin-top: 2px; }}
+.rp-hero .viz .lead {{ font-size: .95rem; font-weight: 700; background: #EAF5FC; border-radius: 8px; padding: 6px 10px; margin: 8px 0; }}
+.rp-hero .viz ul {{ list-style: none; margin: 0; padding: 0; }}
+.rp-hero .viz li {{ display: flex; align-items: center; gap: 8px; margin: 0; padding: 5px 0; font-size: .95rem; font-weight: 600;
+  border-top: 1px solid #E8EEF5; }}
+.rp-hero .viz li:first-child {{ border-top: none; }}
+.rp-hero .viz .ok {{ color: #1E7B45; }} .rp-hero .viz .warn {{ color: #B45309; }} .rp-hero .viz .list {{ color: #1D5FA8; }}
+@container (max-width: 720px) {{
+  .rp-hero {{ grid-template-columns: minmax(0, 1fr); gap: 20px; padding: 24px 20px; min-height: 0; }}
+  .rp-hero .viz .link {{ display: none; }}
+  .rp-hero .viz .docs {{ margin-bottom: 10px; }}
+  .rp-hero .viz .diag {{ padding: 10px 14px; }}
+  .rp-hero .viz .lead {{ display: none; }}
+  .rp-hero .viz ul {{ display: flex; flex-wrap: wrap; gap: 2px 14px; margin-top: 6px; }}
+  .rp-hero .viz li {{ border-top: none; padding: 2px 0; }}
+  .rp-hero .cta a.btn {{ flex: 1 1 100%; }} }}
+/* トップの各セクション */
+[id="rp-demo"], [id="rp-own"] {{ scroll-margin-top: 3.2rem; }}
+.rp-lead {{ font-size: .95rem; line-height: 1.6; color: #374151; margin: 0 0 8px; }}
+.rp-flow5 {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }}
+.rp-flow5 .rp-card .m {{ margin-top: 0; padding-top: 0; }}
+.rp-flow5 .rp-card .b {{ font-size: .95rem; line-height: 1.6; }}
 
 /* トップ：3分デモの流れと成果物の見本（左右の高さをそろえ、下のボタンの位置を合わせる） */
 .rp-flow {{ display: flex; flex-direction: column; gap: 8px; height: 340px; margin-bottom: 12px; }}
@@ -225,7 +267,7 @@ div[data-testid="stElementContainer"]:has(> iframe[data-testid="stIFrame"]) {{ p
 .st-key-tour {{ background: #FFFFFF; border: 1px solid {BORDER}; border-left: 5px solid {ACCENT}; border-radius: 10px;
   padding: 10px 14px 8px; margin-bottom: 6px; box-shadow: 0 1px 3px rgba(20, 38, 63, .08); }}
 
-@media (max-width: 800px) {{ .rp-stepper {{ grid-template-columns: 1fr 1fr; }} .rp-flow, .rp-result {{ height: auto; }} .rp-ctxrow {{ grid-template-columns: 1fr; }} .rp-grid {{ grid-template-columns: 1fr; }} .rp-hero .name {{ font-size: 2rem; }}
+@media (max-width: 800px) {{ .rp-stepper {{ grid-template-columns: 1fr 1fr; }} .rp-flow, .rp-result {{ height: auto; }} .rp-ctxrow {{ grid-template-columns: 1fr; }} .rp-grid {{ grid-template-columns: 1fr; }}
   .rp-hero .motif {{ display: none; }} .rp-hero .inner {{ max-width: 100%; }} }}
 </style>
 """
@@ -303,11 +345,13 @@ def quote(text: str) -> None:
     st.markdown(f'<div class="rp-quote">{esc(text)}</div>', unsafe_allow_html=True)
 
 
-def section(title: str, top: str | None = None, gold: bool = False, big: bool = False, size: str = "") -> None:
-    """小見出し。top で上の余白を個別に調整（例："-7px"）。gold=True で縦線を金色、big=True で文字を大きく、size="md" で中くらいに。"""
+def section(title: str, top: str | None = None, gold: bool = False, big: bool = False, size: str = "", anchor: str = "") -> None:
+    """小見出し。top で上の余白を個別に調整（例："-7px"）。gold=True で縦線を金色、big=True で文字を大きく、
+    size="md" で中くらいに。anchor を渡すと、ページ内リンクの移動先になる。"""
     style = f' style="margin-top:{top}"' if top else ""
     cls = "rp-h" + (" gold" if gold else "") + (" big" if big else "") + (f" {size}" if size else "")
-    st.markdown(f'<div class="{cls}"{style}>{esc(title)}</div>', unsafe_allow_html=True)
+    ident = f' id="{esc(anchor)}"' if anchor else ""
+    st.markdown(f'<div class="{cls}"{ident}{style}>{esc(title)}</div>', unsafe_allow_html=True)
 
 
 def tiles(items: list[dict], cols: int | None = None) -> None:
