@@ -160,7 +160,8 @@ def restore() -> None:
                     st.session_state.project = from_json_bytes(f.read())
                 st.session_state["_sid"] = sid
                 st.session_state.setdefault("media", {})
-                flash("接続が一度切れたため、作業を自動で復元しました。", "info")
+                if not is_demo():  # デモは見るだけなので、復元しても知らせない
+                    flash("接続が一度切れたため、作業を自動で復元しました。", "info")
                 _cleanup()
                 return
             except (OSError, LoadError):
@@ -171,4 +172,3 @@ def restore() -> None:
 
         p = build(demo)
         set_project(p, demo_initial=p)
-        flash("接続が切れたため、デモを最初の状態で開き直しました。", "info")

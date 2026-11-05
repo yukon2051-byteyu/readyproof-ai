@@ -252,3 +252,33 @@ def test_update_from_answer_keeps_test_conditions():
     pj = at.session_state["project"]
     assert current_diagnosis(pj, "REQ-001")["test_conditions"] == before
     assert at.session_state["focus_req"] == "REQ-001"
+
+
+def test_demo_restore_shows_no_notice(tmp_path):
+    """デモを復元しても「接続が切れた」の案内を出さない。自分の案件では出す。"""
+    import json
+    import uuid
+
+    from readyproof.export.jsonio import to_json_bytes
+    from readyproof.ui import state as ui_state
+
+    os_dir = ui_state._SESS_DIR
+    import os
+    os.makedirs(os_dir, exist_ok=True)
+    for demo_id, notice in (("demo1", False), (None, True)):
+        p = build("demo1")
+        p["project"]["demo_id"] = demo_id
+        sid = uuid.uuid4().hex
+        path = os.path.join(os_dir, sid + ".json")
+        with open(path, "wb") as f:
+            f.write(to_json_bytes(p))
+        try:
+            at = AppTest.from_file(APP, default_timeout=120)
+            at.query_params["s"] = sid
+            at.run()
+            assert not at.exception
+            assert at.session_state["project"]["project"]["demo_id"] == demo_id
+            assert ("作業を自動で復元しました" in texts(at)) is notice
+        finally:
+            if os.path.exists(path):
+                os.remove(path)
