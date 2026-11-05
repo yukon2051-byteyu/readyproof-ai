@@ -167,7 +167,7 @@ def detail(p, t):
                                           "test_ids": [t["id"]], "actual_behavior": lr["actual"],
                                           "needed_behavior": t["expected"], "acceptance_criteria": t["expected"],
                                           "repro_steps": t["steps"], "priority": "高"})
-                st.session_state.focus_req = t["req_ids"][0] if t["req_ids"] else None
+                state.focus_requirement(t["req_ids"][0]) if t["req_ids"] else None
                 state.flash(f"{c['id']}（下書き）を作りました。③ 診断結果の該当する要件で確認してください。")
                 state.goto("result")
             st.caption("要件との違いがあっても、合意済みの仕様か追加要望かを確認してから区分を選んでください（不具合と断定しない）。")

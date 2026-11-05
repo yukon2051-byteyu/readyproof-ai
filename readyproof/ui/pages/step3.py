@@ -1,36 +1,37 @@
-"""③ 診断結果（出力1）：要件ごとに「そのまま使えるか」を、根拠（元資料の前後と引用）と一緒に示す。
+"""③ 診断結果（出力1）：利用者の考える順序に合わせて、3階層で示す。
 
-不明点はその場でベンダーへの質問に、合わない部分は対応方法と依頼書につなげる。
+第1階層 診断サマリー：結局使えるのか、何が問題か、次に何をするか（長文・根拠は出さない）
+第2階層 要件カード：要件ごとの結論・短い理由・必要な対応・確認状態。絞り込みと並び替え
+第3階層 詳細：開いたときだけ、4つの面（diagnosis_panels.py）で根拠や履歴を確認する
+
+表示する内容は logic/diagnosis_view.py が既存データから導き出す。画面に業務判断を書かない。
 """
 from __future__ import annotations
 
 import streamlit as st
 
-from ...core import ACTION_TYPES, DIAG_CATEGORIES
+from ...core import DIAG_CATEGORIES, REQ_PRIORITY
 from ...export.excel import questionnaire_workbook
+from ...logic import diagnosis_view as V
+from ...logic import metrics as M
 from ...logic import rules
-from .. import readonly, state
-from ..components import evidence_view
+from .. import state
 from ..layout import header, next_button
-from ..theme import CATEGORY_STYLE, badge, box, category_chip, chip, esc, review_chip, section, tiles
-from . import diagnosis, questions
+from ..theme import box, check_chip, esc, section, status_pill, tiles
+from . import diagnosis, diagnosis_panels
 
 XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-COLOR = {"green": "#1E7B45", "orange": "#B45309", "red": "#B42318", "gray": "#5B6574", "violet": "#6B3FA0"}
-# 画面で使う短い言葉（区分そのものは変えない）
-PLAIN = {
-    "そのまま対応できる見込み": "そのまま使える見込み",
-    "標準設定で対応できる見込み": "設定すれば使える見込み",
-    "追加対応の検討が必要": "追加の対応が必要",
-    "対応不可との記載・確認済み発言あり": "使えない（記載・確認あり）",
-    "情報不足・ベンダー確認が必要": "確認が必要（情報不足）",
-    "根拠間に矛盾あり": "確認が必要（根拠が矛盾）",
-}
+COLOR = {"green": "#1E7B45", "orange": "#B45309", "red": "#B42318", "gray": "#5B6574", "navy": "#1D4E89"}
+TILE_COLOR = {"likely": COLOR["green"], "extra": COLOR["orange"], "hard": COLOR["red"], "check": COLOR["orange"]}
+TILE_NOTE = {"likely": "資料・回答からの見込み", "extra": "オプション・改修などが必要", "hard": "使えないとの記載・確認あり",
+             "check": "情報不足・根拠の矛盾"}
+PAGE_LABEL = {"input2": "② 自社のルールへ", "tests": "④ 受入テストへ", "decision": "⑤ 導入判断へ", "result": "詳細を開く"}
+SHOW_ACTIONS = 5
 
 
 def render():
     p = header("result", "診断結果",
-               "自社の要件ごとに、製品がそのまま使えるかを判定しました。これは資料・営業説明から見た「見込み」です。実際に動くかは④の受入テストで確かめます。")
+               "資料と営業説明から見た「見込み」です。実際に動くかは ④ の受入テストで確かめます。")
     if not p:
         return
     reqs = [r for r in p["requirements"] if r["status"] != "廃止"]
@@ -39,27 +40,78 @@ def render():
         if st.button("② 自社のルールへ"):
             state.goto("input2")
         return
-    summary(p, reqs)
+    m = M.compute(p)
+    rs = V.rows(p, m)
+    _summary(p, m, rs)
     if not state.is_demo():  # デモは見るだけ（AIは実行しない）
         ai_box(p, reqs)
-    focus = st.session_state.get("focus_req")
-    if focus not in [r["id"] for r in reqs]:  # 何も開いていなければ1件目を開く（「閉じる」は使わない）
-        focus = reqs[0]["id"]
-    section("要件ごとの診断")
-    for r in reqs:
-        card(p, r, focus == r["id"])
+    _cards(p, rs)
     next_button("次へ：④ 受入テスト", "tests", left=lambda: st.download_button(
         "ベンダーへの質問書（Excel）をダウンロード", questionnaire_workbook(p), width="stretch",
         file_name=f"{p['project']['id']}_質問書.xlsx", mime=XLSX, icon=":material/download:", key="dl_q_bottom"))
 
 
+# ---------------- 第1階層：診断サマリー ----------------
+def _summary(p, m, rs):
+    s = V.summary(p, m, rs)
+    plan = f"（{s['plan']}）" if s["plan"] else ""
+    st.markdown(
+        f"<div class='rp-sum'><div class='meta'><span>{esc(s['product'])}{esc(plan)}　自社の要件 {s['total']}件（必須 {s['must']}件）</span>"
+        f"<span class='st {s['status']['tone']}'>{esc(s['status']['text'])}</span></div>"
+        f"<div class='head'>{esc(s['head'])}</div>"
+        + "".join(f"<div class='sub'>{esc(x)}</div>" for x in s["subs"]) + "</div>", unsafe_allow_html=True)
+    _kpis(m, rs)
+    if s["points"]:
+        section("導入判断に影響すること", size="md")
+        st.markdown("<ul class='rp-points'>" + "".join(f"<li>{esc(x)}</li>" for x in s["points"]) + "</ul>", unsafe_allow_html=True)
+    _next_actions(p, rs)
+
+
+def _kpis(m, rs):
+    k = V.kpis(rs, m)
+    base = f"全要件 {k['total']}件のうち"
+    items = [{"label": x["label"], "value": f"{x['value']}件", "note": f"{base}・{TILE_NOTE[x['key']]}", "color": TILE_COLOR[x["key"]]}
+             for x in k["main"]]
+    items.append({"label": "未診断", "value": f"{k['none']}件", "note": base, "color": COLOR["gray"]})
+    t = k["tests"]
+    test_note = (f"合格 {t['passed']}件・不合格 {t['failed']}件" if t["run"] else "まだ実機で確かめていません") if t["total"] else "テストはまだありません"
+    items.append({"label": "実機テスト（実施）", "value": f"{t['run']}/{t['total']}件", "note": test_note, "color": COLOR["navy"],
+                  "alert": bool(t["failed"])})
+    tiles(items)
+    if k["zero"]:
+        st.caption("0件：" + "、".join(k["zero"]))
+    with st.expander(f"診断区分の内訳（全6区分・全要件 {k['total']}件）"):
+        lines = [f"<tr><td>{esc(V.PLAIN[c])}</td><td class='n'>{m['by_category'][c]}件</td></tr>" for c in DIAG_CATEGORIES]
+        lines.append(f"<tr><td>未診断</td><td class='n'>{m['no_diagnosis']}件</td></tr>")
+        st.markdown("<table class='rp-tbl'>" + "".join(lines) + "</table>", unsafe_allow_html=True)
+
+
+def _next_actions(p, rs):
+    items = V.next_actions(p, rs)
+    section("次にやるべきこと", size="md")
+    if not items:
+        st.markdown("<div class='rp-body'>いま必要な対応はありません。</div>", unsafe_allow_html=True)
+        return
+    for i, a in enumerate(items[:SHOW_ACTIONS], start=1):
+        c1, c2 = st.columns([5, 1.5], vertical_alignment="center")
+        c1.markdown(f"<div class='rp-act'><span class='no'>{i}</span><div><div class='t'>{esc(a['text'])}"
+                    f"<span class='s'>{esc(a['status'])}</span></div>"
+                    f"<div class='d'>対象：{esc(a['title'])}" + (f"　理由：{esc(a['reason'])}" if a["reason"] else "") + "</div></div></div>",
+                    unsafe_allow_html=True)
+        if c2.button(PAGE_LABEL[a["page"]], key=f"na_{i}", width="stretch"):
+            if a["page"] == "result":
+                state.focus_requirement(a["req_id"], a.get("tab"))
+                st.rerun()
+            state.goto(a["page"])
+    if len(items) > SHOW_ACTIONS:
+        st.caption(f"ほか {len(items) - SHOW_ACTIONS}件は、下の要件の一覧で確認できます。")
+
+
+# ---------------- AIの実行欄（自分の案件のみ） ----------------
 def ai_box(p, reqs):
     """診断は常にAIで行う。未診断があれば実行欄を表示、すべて診断済みなら「やり直す」だけ表示。"""
     confirmed = [r for r in reqs if r["status"] == "確定"]
     undiag = [r["id"] for r in confirmed if not rules.current_diagnosis(p, r["id"])]
-    drafts = len(reqs) - len(confirmed)
-    if drafts:
-        st.caption(f"確定していない要件 {drafts}件は診断しません（② 自社のルールで確定すると診断の対象になります）。")
     if undiag:
         with box():
             diagnosis.ai_section(p, reqs, default=undiag, title=f"AIで診断する（未診断 {len(undiag)}件）",
@@ -79,6 +131,49 @@ def ai_box(p, reqs):
         st.rerun()
 
 
+# ---------------- 第2階層：要件カード ----------------
+def _cards(p, rs):
+    section("要件ごとの診断", size="md")
+    if st.session_state.pop("_rq_jump", False):  # 別の場所から要件を開いたときは、隠れないよう絞り込みを解除
+        st.session_state.rq_filter = "all"
+        st.session_state.rq_prio = "すべて"
+    st.session_state.setdefault("rq_filter", "all")
+    c = V.counts(rs)
+    labels = {"all": f"すべて（{len(rs)}）", **{k: f"{V.GROUPS[k]['label']}（{c[k]}）" for k in V.GROUPS}}
+    group = st.segmented_control("診断で絞り込む", list(labels), format_func=lambda k: labels[k], key="rq_filter",
+                                 label_visibility="collapsed")
+    f1, f2, _ = st.columns([1, 1, 1.4])
+    prio = f1.selectbox("重要度", ["すべて"] + REQ_PRIORITY, key="rq_prio")
+    sort = f2.selectbox("並び順", V.SORTS, key="rq_sort")
+    shown = V.filter_sort(rs, group or "all", prio, sort)
+    if not shown:
+        st.caption("条件に合う要件はありません。")
+    focus = st.session_state.get("focus_req")
+    for x in shown:
+        _card(p, x, focus == x["req"]["id"])
+
+
+def _card(p, x, opened: bool):
+    r = x["req"]
+    with box():
+        c1, c2 = st.columns([5, 1.3], vertical_alignment="top")
+        need = x["need"]["text"]
+        checks = "".join(check_chip(k, v["text"], v["state"]) for k, v in x["checks"])
+        c1.markdown(
+            f"<div class='rp-rq'><div class='hd'><span class='t'>{esc(x['title'])}</span><span class='id'>{esc(r['id'])}</span></div>"
+            f"<div class='pl'>{status_pill(x['label'], x['group'])}<span class='prio'>{esc(r.get('priority', ''))}</span></div>"
+            f"<div class='why'>{esc(x['reason'])}</div>"
+            f"<div class='nd'><span class='lb'>必要な対応</span>{esc(need)}</div>"
+            f"<div class='ck'>{checks}</div></div>", unsafe_allow_html=True)
+        if c2.button("閉じる" if opened else "詳細を見る", key=f"fr_{r['id']}", width="stretch"):
+            st.session_state.focus_req = None if opened else r["id"]
+            st.rerun()
+        if opened:
+            st.divider()
+            diagnosis_panels.render(p, r, x["dg"])
+
+
+# ---------------- ⑤ 導入判断でも使う：必須要件の判定の件数 ----------------
 def summary(p, reqs):
     must = [r for r in reqs if r["priority"] == "必須"]
     cnt = {c: 0 for c in DIAG_CATEGORIES}
@@ -89,108 +184,13 @@ def summary(p, reqs):
             cnt[dg["category"]] += 1
         else:
             none += 1
-    check = cnt["情報不足・ベンダー確認が必要"] + cnt["根拠間に矛盾あり"]
-    st.markdown(f"**必須の要件 {len(must)}件の判定**（そのほかの要件 {len(reqs) - len(must)}件は下の一覧にあります）")
+    check = cnt[DIAG_CATEGORIES[4]] + cnt[DIAG_CATEGORIES[5]]
+    st.markdown(f"**必須の要件 {len(must)}件の判定**（そのほかの要件 {len(reqs) - len(must)}件は ③ 診断結果の一覧にあります）")
     tiles([
-        {"label": "そのまま使える見込み", "value": f"{cnt[DIAG_CATEGORIES[0]]}件", "color": COLOR["green"]},
-        {"label": "設定すれば使える見込み", "value": f"{cnt[DIAG_CATEGORIES[1]]}件", "color": COLOR["green"]},
-        {"label": "追加の対応が必要", "value": f"{cnt[DIAG_CATEGORIES[2]]}件", "color": COLOR["orange"]},
-        {"label": "使えない（記載・確認あり）", "value": f"{cnt[DIAG_CATEGORIES[3]]}件", "color": COLOR["red"]},
-        {"label": "確認が必要（情報不足・矛盾）", "value": f"{check}件", "color": COLOR["violet"]},
+        {"label": V.PLAIN[DIAG_CATEGORIES[0]], "value": f"{cnt[DIAG_CATEGORIES[0]]}件", "color": COLOR["green"]},
+        {"label": V.PLAIN[DIAG_CATEGORIES[1]], "value": f"{cnt[DIAG_CATEGORIES[1]]}件", "color": COLOR["green"]},
+        {"label": V.PLAIN[DIAG_CATEGORIES[2]], "value": f"{cnt[DIAG_CATEGORIES[2]]}件", "color": COLOR["orange"]},
+        {"label": V.PLAIN[DIAG_CATEGORIES[3]], "value": f"{cnt[DIAG_CATEGORIES[3]]}件", "color": COLOR["red"]},
+        {"label": "確認が必要（情報不足・矛盾）", "value": f"{check}件", "color": COLOR["orange"]},
         {"label": "まだ診断していない", "value": f"{none}件", "color": COLOR["gray"]},
     ])
-
-
-def card(p, r, focused: bool):
-    dg = rules.current_diagnosis(p, r["id"])
-    with box():
-        c1, c2 = st.columns([5, 1.5], vertical_alignment="top")
-        if dg:
-            color, icon = CATEGORY_STYLE.get(dg["category"], ("gray", None))
-            head = badge(PLAIN.get(dg["category"], dg["category"]), color, icon) + review_chip(dg["review_status"], dg["origin"])
-        else:
-            head = badge("まだ診断していない", "gray", "hourglass_empty")
-        c1.markdown(f"{head}{chip(r['priority'], 'info')}<br><span class='rp-item'><span class='h'>{esc(r['id'])}　"
-                    f"{esc(r['business'])}</span></span>　<span class='rp-small'>{esc(r['rules'] or r['workflow'])}</span>",
-                    unsafe_allow_html=True)
-        nq = sum(1 for q in p["questions"] if r["id"] in q.get("req_ids", []))
-        ncr = sum(1 for c in p["requests"] if r["id"] in c.get("req_ids", []))
-        if dg:
-            c1.caption(f"理由：{dg['reason']}")
-        elif r["status"] != "確定":
-            c1.caption("要件が確定していないため、診断していません（② 自社のルールで確定すると診断できます）。")
-        else:
-            c1.caption("まだ診断していません（上の「AIで診断する」で診断します）。")
-        if focused:
-            c2.markdown("<div style='text-align:center' class='rp-small'>下に表示中</div>", unsafe_allow_html=True)
-        elif c2.button("詳しく確認する", key=f"fr_{r['id']}", width="stretch", type="primary"):
-            st.session_state.focus_req = r["id"]
-            st.rerun()
-        c2.caption(f"根拠 {len(dg['evidence']) if dg else 0}件・質問 {nq}件・依頼 {ncr}件")
-        if not focused:
-            if dg and dg["evidence"]:
-                evidence_view(p, dg["evidence"][0], state.product_id())
-                if len(dg["evidence"]) > 1:
-                    st.caption(f"ほかの根拠 {len(dg['evidence']) - 1}件は「詳しく確認する」で表示します。")
-            return
-        st.divider()
-        with readonly.scope(state.is_demo()):  # デモは見るだけ（確認・作成・採用などは押せない）
-            diagnosis.detail(p, r)
-            followups(p, r, dg)
-
-
-def followups(p, r, dg):
-    section("ベンダーへの質問")
-    qs = [q for q in p["questions"] if r["id"] in q.get("req_ids", [])]
-    for q in qs:
-        with box():
-            questions.question_detail(p, q)
-    if st.button("この要件について質問を作る", key=f"mkq_{r['id']}", icon=":material/help:"):
-        rem = "、".join(dg["remaining_conditions"]) if dg and dg["remaining_conditions"] else "設定方法・対象プラン・追加費用の有無"
-        q = rules.add_question(p, {"req_ids": [r["id"]], "diag_id": dg["id"] if dg else "",
-                                   "background": f"自社の要件「{r['business']}」：{r['rules']}",
-                                   "question": f"この要件について、次の点を教えてください：{rem}",
-                                   "points": "・対応できるか\n・対象プラン・オプション\n・設定方法\n・追加費用の有無"})
-        state.flash(f"{q['id']}（下書き）を作りました。内容を直して確定してください。")
-        st.rerun()
-
-    if not dg or dg["category"] in DIAG_CATEGORIES[:2]:
-        if not [a for a in p["actions"] if a["req_id"] == r["id"]]:
-            return
-    section("合わない部分への対応と依頼書")
-    for a in [a for a in p["actions"] if a["req_id"] == r["id"]]:
-        tone = {"採用": "ok", "不採用": "muted", "候補": "info"}[a["status"]]
-        cc1, cc2 = st.columns([4, 2], vertical_alignment="center")
-        cc1.markdown(f"{chip(a['status'], tone)}{chip(a['type'], 'info')}{esc(a['reason'])}"
-                     + (f"<br><span class='rp-small'>不明点：{esc(a['unknowns'])}</span>" if a["unknowns"] else ""),
-                     unsafe_allow_html=True)
-        if a["status"] == "候補":
-            why = cc2.text_input("判断の理由", key=f"aw_{a['id']}", label_visibility="collapsed", placeholder="判断の理由")
-            b1, b2 = cc2.columns(2)
-            for col, val in ((b1, "採用"), (b2, "不採用")):
-                if col.button(val, key=f"ad_{a['id']}_{val}", width="stretch"):
-                    try:
-                        rules.decide_action(p, a, val, state.user_name(), why)
-                        st.rerun()
-                    except rules.RuleError as e:
-                        st.error(str(e))
-        else:
-            cc2.caption(f"{a['decided_by']}（自己申告）：{a['decision_reason']}")
-    with st.form(f"form_act_{r['id']}", clear_on_submit=True):
-        f1, f2 = st.columns([1, 2])
-        typ = f1.selectbox("対応方法の候補を追加", ACTION_TYPES)
-        reason = f2.text_input("内容と理由（費用・期間は想像で書かない）")
-        if st.form_submit_button("候補に追加"):
-            rules.add_action(p, {"req_id": r["id"], "diag_id": dg["id"] if dg else "", "type": typ, "reason": reason})
-            st.rerun()
-    for c in [c for c in p["requests"] if r["id"] in c.get("req_ids", [])]:
-        with box():
-            questions.request_detail(p, c)
-    if st.button("この要件の依頼書を作る（下書き）", key=f"mkcr_{r['id']}", icon=":material/edit_note:"):
-        kind = "調査依頼" if dg and dg["category"] not in DIAG_CATEGORIES[2:4] else "改修依頼"
-        c = rules.add_request(p, {"title": f"{r['business']}への対応", "kind": kind, "phase": "資料診断段階の懸念",
-                                  "req_ids": [r["id"]], "diag_ids": [dg["id"]] if dg else [],
-                                  "background": dg["reason"] if dg else "", "needed_behavior": r["rules"],
-                                  "acceptance_criteria": r["rules"], "priority": "中"})
-        state.flash(f"{c['id']}（下書き）を作りました。内容を直して確定してください。")
-        st.rerun()

@@ -13,7 +13,7 @@ from readyproof.ui.pages import home, settings_page, step1, step2, step3, step4,
 from readyproof.ui.theme import inject_css
 
 st.set_page_config(page_title=APP_NAME_EN, page_icon=":material/fact_check:", layout="wide",
-                   initial_sidebar_state="expanded")
+                   initial_sidebar_state="auto")
 inject_css()
 readonly.install()  # デモの「見るだけ」範囲で入力部品を非活性にする仕組み
 _ASSETS = os.path.join(os.path.dirname(__file__), "readyproof", "ui", "assets")

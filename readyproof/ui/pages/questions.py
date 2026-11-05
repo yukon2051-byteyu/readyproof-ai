@@ -150,11 +150,12 @@ def question_detail(p, q):
                         "reason": f"{q['id']} のベンダー回答を反映（区分は人が見直してください）。" + (cur["reason"] if cur else ""),
                         "met_conditions": cur["met_conditions"] if cur else [],
                         "remaining_conditions": cur["remaining_conditions"] if cur else [],
+                        "test_conditions": cur.get("test_conditions", []) if cur else [],
                         "evidence": (cur["evidence"] if cur else []) + [{"ref_type": "answer", "question_id": q["id"],
                                                                          "quote": q["answer_text"], "kind": "ベンダー回答"}],
                         "plan_conditions": cur.get("plan_conditions", "") if cur else "",
                         "next_check": "回答内容を実機テストで確認する"}, origin="手動")
-                st.session_state.sel_diag_req = q["req_ids"][0]
+                state.focus_requirement(q["req_ids"][0])
                 state.flash("診断の更新候補（未確認）を作りました。区分と根拠を確認してください。テスト合格にはなりません。")
                 state.goto("diagnosis")
     if q["status"] not in ("回答確認済み", "取り下げ") and st.button("取り下げ", key=f"wd_{q['id']}"):

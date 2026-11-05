@@ -47,9 +47,17 @@ def set_project(p: dict, demo_initial: dict | None = None) -> None:
     st.session_state.demo_initial = copy.deepcopy(demo_initial) if demo_initial else None
     st.session_state.media = {}  # 録画本体（このセッションのメモリにだけ保持）
     for k in list(st.session_state.keys()):
-        if str(k).startswith(("sel_", "ed_", "form_", "intake_")) or k in (
-                "open_item", "focus_req", "edit_req", "pending_media"):
+        if str(k).startswith(("sel_", "ed_", "form_", "intake_", "rq_", "dtab_")) or k in (
+                "open_item", "focus_req", "edit_req", "pending_media", "aiq"):
             del st.session_state[k]
+
+
+def focus_requirement(rid: str, tab: str | None = None) -> None:
+    """③ で開く要件を指定する（絞り込みで隠れないよう、次の表示で絞り込みを解除する）。"""
+    st.session_state.focus_req = rid
+    st.session_state["_rq_jump"] = True
+    if tab:
+        st.session_state[f"dtab_{rid}"] = tab
 
 
 def user_name() -> str:

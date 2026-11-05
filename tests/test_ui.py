@@ -135,14 +135,19 @@ def test_demo_decision_widgets_disabled_but_own_project_enabled():
     p = build_screen("demo1")
     t = p["tests"][0]["id"]
     r = next(x["id"] for x in p["requirements"] if x["status"] == "確定")
-    for pg, extra in (("tests", {"sel_test": t}), ("result", {"focus_req": r}), ("decision", {})):
+    nav_keys = ("fr_", "na_", "to_rule_", "rq_", "next_")  # 詳細の開閉・絞り込み・移動はデモでも使う
+    cases = [("tests", {"sel_test": t}), ("decision", {})]
+    cases += [("result", {"focus_req": r, f"dtab_{r}": tab}) for tab in ("main", "evidence", "log", "act")]
+    for pg, extra in cases:
         at = page(pg, p, **extra)
         assert not at.exception
         widgets = list(at.button) + list(at.text_input) + list(at.text_area) + list(at.selectbox) + list(at.radio) + list(at.checkbox)
-        decide = [w for w in widgets if getattr(w, "label", "") not in ("詳しく確認する", "閉じる", "詳しく見る")
+        decide = [w for w in widgets if not str(getattr(w, "key", "") or "").startswith(nav_keys)
+                  and getattr(w, "label", "") not in ("詳しく確認する", "閉じる", "詳しく見る")
                   and not getattr(w, "label", "").startswith(("次へ", "デモはここまで"))
                   and not getattr(w, "label", "").endswith("の画面へ移動")]
-        assert decide, pg
+        if pg != "result" or extra[f"dtab_{r}"] != "main":  # 「診断と対応」は読むだけの面で、決定の部品がない
+            assert decide, (pg, extra)
         assert all(w.disabled for w in decide), (pg, [w.label for w in decide if not w.disabled])
     p["project"]["demo_id"] = None  # 自分の案件
     at = page("tests", p, sel_test=t)
@@ -193,3 +198,57 @@ def test_ai_interview_answers_one_by_one():
     assert not at.exception
     t = texts(at)
     assert "回答から要件の下書きを作る" in t and "10000" in t and "分からない・未定" in t
+
+
+def test_result_page_layers_and_controls():
+    """③：最初は結論だけ。詳細は開いたときだけ。絞り込み・面の切り替えはデモでも使え、根拠7件を確認できる。"""
+    from readyproof.demos.builder import build as build_screen
+
+    p = build_screen("demo1")
+    at = page("result", p)
+    assert not at.exception
+    t = texts(at)
+    assert "必須要件2件は、製品の設定で対応できる見込みです" in t and "次にやるべきこと" in t
+    assert "9/9件" in t and "未診断" in t
+    assert "承認ルート設定" not in t.split("要件ごとの診断")[0]  # サマリーに根拠原文を出さない
+    assert not [b for b in at.button if b.label == "閉じる"]  # 最初はすべて閉じている
+    group = at.button_group(key="rq_filter")
+    assert not group.disabled and "対応可能な見込み（2）" in group.options and "未診断（1）" in group.options
+    at = page("result", p, focus_req="REQ-001", **{"dtab_REQ-001": "evidence"})
+    assert not at.exception
+    t = texts(at)
+    assert "AIの要約ではありません" in t and t.count("ベンダー回答") >= 2
+    at = page("result", p, focus_req="REQ-001", **{"dtab_REQ-001": "log"})
+    t = texts(at)
+    assert "Q-001" in t and "Q-002" in t and "部門長" in t  # 質問と実際の回答
+    assert "実機で動作を確かめたことにはなりません" in t
+    at = page("result", p, focus_req="REQ-003")
+    assert not at.exception and "要件が未確定のため、診断していません" in texts(at)
+
+
+def test_next_action_opens_page_and_filter_resets_on_jump():
+    from readyproof.demos.builder import build as build_screen
+
+    p = build_screen("demo1")
+    at = page("result", p, rq_filter="check", _rq_jump=True, focus_req="REQ-001")
+    assert not at.exception
+    assert [b for b in at.button if b.label == "閉じる"]  # 絞り込みで隠れず、指定の要件が開く
+    at = page("result", p, rq_filter="hard")
+    assert "条件に合う要件はありません" in texts(at)
+
+
+def test_update_from_answer_keeps_test_conditions():
+    """回答からの更新候補で「実機テストで確認すること」を失わず、③ で対象の要件を開く。"""
+    from readyproof.demos.builder import build as build_screen
+    from readyproof.logic.rules import current_diagnosis
+
+    p = build_screen("demo1")
+    p["project"]["demo_id"] = None  # 自分の案件として
+    before = current_diagnosis(p, "REQ-001")["test_conditions"]
+    assert before
+    at = page("result", p, focus_req="REQ-001", **{"dtab_REQ-001": "log"})
+    at.button(key="upd_Q-001").click().run()
+    assert not at.exception
+    pj = at.session_state["project"]
+    assert current_diagnosis(pj, "REQ-001")["test_conditions"] == before
+    assert at.session_state["focus_req"] == "REQ-001"

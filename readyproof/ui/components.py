@@ -65,8 +65,9 @@ def evidence_view(p: dict, ev: dict, product_id: str | None, idx: int | None = N
     elif v["warnings"]:
         head = badge(f"注意 {len(v['warnings'])}件", "orange", "warning")
     label = evidence_label(p, ev, with_quote=False)
-    st.markdown(f'{head}<span class="rp-small">{esc(ev.get("kind") or "根拠")}｜{esc(label)}</span>',
-                unsafe_allow_html=True)
+    kind = ev.get("kind") or "根拠"
+    where = label if label.startswith(kind) else f"{kind}｜{label}"
+    st.markdown(f'{head}<span class="rp-small">{esc(where)}</span>', unsafe_allow_html=True)
     rows = context_rows(p, ev) if v["ok"] else []
     if rows:
         html_rows = "".join(

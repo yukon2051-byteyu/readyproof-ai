@@ -74,7 +74,7 @@ def _issues_and_decision(p, m):
             if st.button(f"{it['ID']} の画面へ移動", icon=":material/arrow_forward:"):
                 target = JUMP.get(it["次の操作"], "diagnosis")
                 if target == "diagnosis" and it["ID"].startswith("REQ"):
-                    st.session_state.sel_diag_req = it["ID"]
+                    state.focus_requirement(it["ID"])
                 if target == "tests" and it["ID"].startswith("T-"):
                     st.session_state.sel_test = it["ID"]
                     st.session_state.test_filter_req = "すべて"

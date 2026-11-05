@@ -133,7 +133,7 @@ def detail(p):
                 except rules.RuleError as e:
                     st.error(str(e))
     if c3.button("この要件の診断へ", key=f"to_diag_{r['id']}", icon=":material/arrow_forward:"):
-        st.session_state.sel_diag_req = r["id"]
+        state.focus_requirement(r["id"])
         state.goto("diagnosis")
     if r.get("history"):
         with st.expander(f"版の履歴（{len(r['history'])}件）"):

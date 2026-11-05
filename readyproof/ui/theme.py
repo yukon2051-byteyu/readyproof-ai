@@ -35,8 +35,8 @@ CATEGORY_STYLE = {
     "標準設定で対応できる見込み": ("green", "tune"),
     "追加対応の検討が必要": ("orange", "build"),
     "対応不可との記載・確認済み発言あり": ("red", "block"),
-    "情報不足・ベンダー確認が必要": ("gray", "help"),
-    "根拠間に矛盾あり": ("violet", "sync_problem"),
+    "情報不足・ベンダー確認が必要": ("orange", "help"),
+    "根拠間に矛盾あり": ("orange", "sync_problem"),
 }
 CATEGORY_TONE = {k: {"green": "ok", "orange": "warn", "red": "bad", "gray": "muted", "violet": "purple"}[v[0]]
                  for k, v in CATEGORY_STYLE.items()}
@@ -170,6 +170,49 @@ mark.rp-mark {{ background: #BFE9FC; color: inherit; padding: 0 2px; border-radi
 .rp-cond3 li {{ margin-bottom: 4px; line-height: 1.6; }}
 @media (max-width: 800px) {{ .rp-cond3 {{ grid-template-columns: 1fr; }} .rp-cond3 > div {{ padding: 8px 0; }}
   .rp-cond3 > div + div {{ border-left: none; border-top: 1px solid {BORDER}; }} }}
+/* ③ 診断結果：第1階層（診断サマリー） */
+.rp-h.md {{ font-size: 1.2rem; }}
+.rp-sum {{ background: #fff; border: 1px solid {BORDER}; border-left: 5px solid {NAVY}; border-radius: 10px; padding: 16px 20px; margin: 2px 0 14px; }}
+.rp-sum .meta {{ display: flex; flex-wrap: wrap; gap: 6px 12px; justify-content: space-between; align-items: center; font-size: .85rem; color: {MUTED}; }}
+.rp-sum .st {{ font-size: .85rem; font-weight: 700; padding: 2px 10px; border-radius: 999px; background: #EEF1F5; color: #3F4A5A; }}
+.rp-sum .st.warn {{ background: #FDF1DF; color: #8A4B08; }}
+.rp-sum .st.ok {{ background: #E5F4EB; color: #1E7B45; }}
+.rp-sum .head {{ font-size: 1.5rem; font-weight: 800; color: {NAVY}; line-height: 1.4; margin: 8px 0 6px; }}
+.rp-sum .sub {{ font-size: 1rem; color: #374151; line-height: 1.7; max-width: 60em; }}
+.rp-points {{ margin: 0 0 6px; padding: 0; list-style: none; font-size: .95rem; line-height: 1.7; }}
+.rp-body {{ font-size: .95rem; line-height: 1.7; max-width: 62em; margin: 6px 0; color: #1F2937; }}
+.rp-tbl {{ border-collapse: collapse; font-size: .92rem; }}
+.rp-tbl td {{ padding: 3px 18px 3px 0; border: none; }}
+.rp-tbl td.n {{ text-align: right; font-weight: 700; }}
+.rp-act {{ display: flex; gap: 10px; align-items: flex-start; }}
+.rp-act .no {{ flex: none; width: 26px; height: 26px; border-radius: 50%; background: {NAVY}; color: #fff; font-size: .85rem; font-weight: 700;
+  display: inline-flex; align-items: center; justify-content: center; margin-top: 1px; }}
+.rp-act .t {{ font-size: 1rem; font-weight: 700; color: {NAVY}; line-height: 1.5; }}
+.rp-act .s {{ font-size: .76rem; font-weight: 500; color: #8A4B08; background: #FDF1DF; border-radius: 4px; padding: 1px 6px; margin-left: 8px; }}
+.rp-act .d {{ font-size: .86rem; color: {MUTED}; line-height: 1.55; }}
+/* ③ 診断結果：第2階層（要件カード） */
+.rp-rq .hd {{ display: flex; flex-wrap: wrap; gap: 2px 10px; align-items: baseline; }}
+.rp-rq .t {{ font-size: 1.08rem; font-weight: 700; color: {NAVY}; line-height: 1.45; }}
+.rp-rq .id {{ font-size: .76rem; color: {MUTED}; }}
+.rp-rq .pl {{ margin: 6px 0; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }}
+.rp-rq .prio {{ font-size: .78rem; color: #3F4A5A; background: #EEF1F5; border-radius: 4px; padding: 1px 6px; }}
+.rp-rq .why {{ font-size: .95rem; line-height: 1.65; color: #1F2937; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }}
+.rp-rq .nd {{ font-size: .95rem; font-weight: 600; color: {NAVY}; margin-top: 6px; }}
+.rp-rq .nd .lb {{ font-size: .78rem; font-weight: 500; color: {MUTED}; margin-right: 8px; }}
+.rp-rq .ck {{ display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 8px 0 10px; }}
+.rp-pill {{ display: inline-block; font-size: .88rem; font-weight: 700; padding: 2px 10px; border-radius: 6px; border: 1px solid transparent; }}
+.rp-pill.likely {{ background: #F0F9F3; color: #1E7B45; border: 1px dashed #5FAF80; }}
+.rp-pill.extra, .rp-pill.check {{ background: #FDF1DF; color: #8A4B08; border-color: #F0CF9A; }}
+.rp-pill.hard {{ background: #FCE9E7; color: #B42318; border-color: #F2B8B1; }}
+.rp-pill.none {{ background: #EEF1F5; color: #3F4A5A; border-color: #D5DBE3; }}
+.rp-ck {{ font-size: .78rem; color: {MUTED}; white-space: nowrap; }}
+.rp-ck.ok {{ color: #1E7B45; }} .rp-ck.wait {{ color: #8A4B08; }} .rp-ck.bad {{ color: #B42318; font-weight: 700; }}
+/* ③ 診断結果：第3階層（詳細） */
+.rp-reqtext {{ font-size: .95rem; line-height: 1.65; border-left: 3px solid #C9D3E0; background: #F7F9FC; padding: 6px 12px; margin-bottom: 8px; }}
+.rp-reqtext .lb {{ display: block; font-size: .76rem; color: {MUTED}; }}
+div[data-testid="stButtonGroup"] > div {{ flex-wrap: wrap; }}
+@media (max-width: 768px) {{ [data-testid="stMainBlockContainer"] {{ padding-top: 3.2rem; }} [data-testid="stHeader"] {{ background: {PAGE_BG}; }} }}
+@media (max-width: 640px) {{ .rp-sum {{ padding: 12px 14px; }} .rp-sum .head {{ font-size: 1.3rem; }} .rp-ck {{ white-space: normal; }} }}
 /* 画面移動時に最上部へ戻すための見えない部品（高さ0）が、すき間を作らないようにする */
 div[data-testid="stElementContainer"]:has(> iframe[data-testid="stIFrame"]) {{ position: absolute; height: 0; margin: 0; overflow: hidden; }}
 .rp-tile.gold {{ border-top: 4px solid {GOLD}; }}
@@ -233,6 +276,20 @@ def review_chip(status: str, origin: str = "") -> str:
     return badge(label, "gray", "edit_note")
 
 
+PILL_MARK = {"likely": "○", "extra": "△", "hard": "×", "check": "？", "none": "－"}
+CHECK_MARK = {"ok": "✓", "wait": "…", "bad": "！", "none": "－"}
+
+
+def status_pill(label: str, group: str) -> str:
+    """診断結果の札。色だけに頼らず印と文字でも示す。「見込み」は破線にして、確定した成功に見せない。"""
+    return f"<span class='rp-pill {esc(group)}'>{PILL_MARK.get(group, '')} {esc(label)}</span>"
+
+
+def check_chip(name: str, text: str, state: str) -> str:
+    """確認状態（AI診断・人の確認・ベンダー回答・実機テストを別々に示す）。"""
+    return f"<span class='rp-ck {esc(state)}'>{CHECK_MARK.get(state, '')} {esc(name)}：{esc(text)}</span>"
+
+
 def meta(text: str) -> str:
     """補足情報（色を付けない灰色の小さな文字）。"""
     return f'<span class="rp-small">{esc(text)}</span>'
@@ -246,10 +303,10 @@ def quote(text: str) -> None:
     st.markdown(f'<div class="rp-quote">{esc(text)}</div>', unsafe_allow_html=True)
 
 
-def section(title: str, top: str | None = None, gold: bool = False, big: bool = False) -> None:
-    """小見出し。top で上の余白を個別に調整（例："-7px"）。gold=True で縦線を金色、big=True で文字を大きく。"""
+def section(title: str, top: str | None = None, gold: bool = False, big: bool = False, size: str = "") -> None:
+    """小見出し。top で上の余白を個別に調整（例："-7px"）。gold=True で縦線を金色、big=True で文字を大きく、size="md" で中くらいに。"""
     style = f' style="margin-top:{top}"' if top else ""
-    cls = "rp-h" + (" gold" if gold else "") + (" big" if big else "")
+    cls = "rp-h" + (" gold" if gold else "") + (" big" if big else "") + (f" {size}" if size else "")
     st.markdown(f'<div class="{cls}"{style}>{esc(title)}</div>', unsafe_allow_html=True)
 
 
