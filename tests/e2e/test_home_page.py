@@ -39,6 +39,15 @@ def test_hero_layout_and_links(browser, app_url, width, height):
     pg.close()
 
 
+@pytest.mark.parametrize("width,height", [(1920, 1080), (1440, 900), (1280, 853), (1100, 768), (1024, 768)])
+def test_flow_stays_on_one_row_on_pc(browser, app_url, width, height):
+    pg = open_home(browser, app_url, width, height)
+    ys = {round(c.bounding_box()["y"]) for c in pg.locator(".rp-flow5 .rp-card").all()}
+    assert len(ys) == 1  # 5枚が1段に収まる
+    assert not pg.evaluate(WIDE)
+    pg.close()
+
+
 def test_keyboard_focus_reaches_hero_links(browser, app_url):
     pg = open_home(browser, app_url)
     link = pg.get_by_role("link", name="3分デモを体験する")

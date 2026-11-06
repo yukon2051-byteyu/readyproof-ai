@@ -49,6 +49,10 @@ CSS = f"""
 /* 上の余白を詰める（Streamlit 標準は約6rem） */
 [data-testid="stMainBlockContainer"] {{ padding-top: 1.4px; padding-bottom: 3rem; max-width: 1240px; }}
 [data-testid="stHeader"] {{ background: transparent; height: 2.5rem; }}
+/* PC：サイドバーと本文の左右の余白を詰めて、本文を広げる（スマホでは Streamlit の標準のまま） */
+@media (min-width: 769px) {{
+  [data-testid="stSidebar"] {{ width: 232px !important; min-width: 232px !important; }}
+  [data-testid="stMainBlockContainer"] {{ padding-left: 2rem; padding-right: 2rem; }} }}
 
 /* 背景（薄い灰色）と枠の中（白）を分ける */
 [data-testid="stApp"] {{ background: {PAGE_BG}; }}
@@ -150,7 +154,7 @@ div[class*="st-key-rpbox_"] {{ padding: 14px 18px; }}
 .rp-hero .viz li .v small {{ display: inline-block; font-size: .82rem; font-weight: 500; }}
 .rp-hero .viz li .chev {{ width: 10px; height: 14px; color: #6B7C90; }}
 .rp-hero .viz .ok {{ color: #1E8A5C; }} .rp-hero .viz .warn {{ color: #F2A531; }} .rp-hero .viz .list {{ color: #2B7BE4; }}
-@container (max-width: 720px) {{
+@container (max-width: 820px) {{
   .rp-hero {{ grid-template-columns: minmax(0, 1fr); gap: 20px; padding: 24px 20px; min-height: 0; }}
   .rp-hero .tag span {{ display: inline-block; }}
   .rp-hero .viz .thumb, .rp-hero .viz .link {{ display: none; }}
@@ -164,7 +168,10 @@ div[class*="st-key-rpbox_"] {{ padding: 14px 18px; }}
 /* トップの各セクション */
 [id="rp-demo"], [id="rp-own"] {{ scroll-margin-top: 3.2rem; }}
 .rp-lead {{ font-size: .95rem; line-height: 1.6; color: #374151; margin: 0 0 8px; }}
-.rp-flow5 {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }}
+.rp-flow5 {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 10px; }}
+.rp-flow5 .rp-card {{ padding: 14px 12px; }}
+.rp-flow5 .rp-card .t {{ font-size: 1rem; gap: 6px; }}
+@media (max-width: 1100px) {{ .rp-flow5 .rp-card {{ padding: 12px 10px; }} .rp-flow5 .rp-card .t {{ font-size: .92rem; white-space: nowrap; }} }}
 .rp-flow5 .rp-card .m {{ margin-top: 0; padding-top: 0; }}
 .rp-flow5 .rp-card .b {{ font-size: .95rem; line-height: 1.6; }}
 
