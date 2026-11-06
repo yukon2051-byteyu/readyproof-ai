@@ -47,12 +47,14 @@ def test_summary_shows_conclusion_first(browser, app_url):
 
 def test_filter_and_sort(browser, app_url):
     pg = open_demo(browser, app_url)
+    cards = "n => document.querySelectorAll('.rp-rq').length === n"
     pick(pg, "未診断（1）")
-    assert pg.locator(".rp-rq").count() == 1 and "代理承認" in pg.locator(".rp-rq").first.inner_text()
+    pg.wait_for_function(cards, arg=1, timeout=20000)
+    assert "代理承認" in pg.locator(".rp-rq").first.inner_text()
     pick(pg, "対応可能な見込み（2）")
-    assert pg.locator(".rp-rq").count() == 2
+    pg.wait_for_function(cards, arg=2, timeout=20000)
     pick(pg, "対応困難（0）")
-    assert pg.get_by_text("条件に合う要件はありません").count() == 1
+    pg.get_by_text("条件に合う要件はありません").wait_for(timeout=20000)
     pg.close()
 
 

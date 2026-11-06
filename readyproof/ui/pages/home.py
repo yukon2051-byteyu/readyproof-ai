@@ -6,7 +6,7 @@
 4. 使い方の流れ
 5. 自社の案件で試す（AIパスワードが必要）
 
-見出し帯の図は説明用の静的なイメージで、実際の診断結果ではない。件数や判定は載せない。
+見出し帯の図は説明用の静的なイメージで、件数や判定は架空の例。実際の診断結果ではないことを図の中に明記する。
 見出し帯の2つのボタンはページ内リンクで、下のセクションへ移動するだけ（デモを勝手に始めない）。
 """
 from __future__ import annotations
@@ -30,24 +30,36 @@ def _svg(body: str, cls: str = "ic") -> str:
 
 STROKE = 'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"'
 IC_DOC = _svg(f'<path d="M6 3h8l4 4v14H6z" {STROKE}/><path d="M14 3v4h4M9 12h6M9 16h6" {STROKE}/>')
-IC_RULE = _svg(f'<path d="M5 6h14M5 12h14M5 18h9" {STROKE}/>')
-IC_CHART = _svg(f'<path d="M5 20V4h14v16zM9 16v-4M12 16V9M15 16v-6" {STROKE}/>')
-IC_CHECK = _svg(f'<circle cx="12" cy="12" r="9" {STROKE}/><path d="M8 12.5l2.7 2.7L16 9.5" {STROKE}/>', "ic ok")
-IC_WARN = _svg(f'<path d="M12 4l9 16H3z" {STROKE}/><path d="M12 10v4M12 17h.01" {STROKE}/>', "ic warn")
-IC_LIST = _svg(f'<path d="M9 7h11M9 12h11M9 17h11" {STROKE}/><path d="M4.5 7h.01M4.5 12h.01M4.5 17h.01" {STROKE}/>', "ic list")
-IC_LINK = ('<svg class="link" viewBox="0 0 200 34" preserveAspectRatio="none" fill="none" aria-hidden="true" focusable="false">'
-           '<path d="M50 0v12q0 6 6 6h88q6 0 6-6V0M100 18v14" stroke="currentColor" stroke-width="1.6" vector-effect="non-scaling-stroke"/>'
-           '</svg>')
+IC_CHART = _svg(f'<path d="M6 3h8l4 4v14H6z" {STROKE}/><path d="M9.5 17v-3M12 17v-6M14.5 17v-4" {STROKE}/>')
+IC_OK = _svg('<circle cx="12" cy="12" r="10" fill="currentColor"/><path d="M7.5 12.5l3 3 6-6.5" fill="none" stroke="#fff" stroke-width="2.4" '
+             'stroke-linecap="round" stroke-linejoin="round"/>', "ic ok")
+IC_WARN = _svg('<circle cx="12" cy="12" r="10" fill="currentColor"/>', "ic warn")
+IC_DONE = _svg('<circle cx="12" cy="12" r="10" fill="currentColor"/><path d="M7.5 12.5l3 3 6-6.5" fill="none" stroke="#fff" stroke-width="2.4" '
+               'stroke-linecap="round" stroke-linejoin="round"/>', "ic list")
+IC_CHEV = ('<svg class="chev" viewBox="0 0 10 14" fill="none" aria-hidden="true" focusable="false">'
+           f'<path d="M2 2l5 5-5 5" {STROKE}/></svg>')
+IC_ARROW = ('<svg class="arw" viewBox="0 0 20 14" fill="none" aria-hidden="true" focusable="false">'
+            f'<path d="M1 7h17M12 2l6 5-6 5" {STROKE}/></svg>')
+IC_MARK = ('<svg class="mark" viewBox="0 0 34 20" aria-hidden="true" focusable="false"><path d="M9 0h9L9 20H0z" fill="#2BE6F2"/>'
+           '<path d="M24 0h10l-9 20H15z" fill="#3B9DFF"/></svg>')
+IC_LINK = ('<svg class="link" viewBox="0 0 200 38" preserveAspectRatio="none" fill="none" aria-hidden="true" focusable="false">'
+           '<path d="M50 0v10q0 8 8 8h84q8 0 8-8V0M100 18v18M95 31l5 6 5-6" stroke="currentColor" stroke-width="2" '
+           'stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></svg>')
+LINES = "<b></b><b></b><b></b><b></b>"
 
 HERO_VISUAL = (
-    '<div class="viz">'
-    f'<div class="docs"><div class="doc">{IC_DOC}<span>製品資料</span></div><div class="doc">{IC_RULE}<span>社内ルール</span></div></div>'
+    '<div class="viz"><div class="docs">'
+    f'<div class="doc"><div class="dt">{IC_DOC}<span>製品資料</span></div><div class="thumb a" aria-hidden="true">'
+    f'<div class="scr"><i></i></div><div class="lines">{LINES}</div></div></div>'
+    f'<div class="doc"><div class="dt">{IC_DOC}<span>社内ルール</span></div><div class="thumb" aria-hidden="true">'
+    f'<div class="panel lines">{LINES}</div></div></div></div>'
     f'{IC_LINK}'
-    f'<div class="diag"><div class="ttl">{IC_CHART}<span>適合性診断</span></div>'
-    '<div class="note">診断結果のイメージ</div>'
-    '<div class="lead">適合性・確認事項を整理</div>'
-    f'<ul><li>{IC_CHECK}適合項目</li><li>{IC_WARN}要確認事項</li><li>{IC_LIST}受入テスト項目</li></ul>'
-    '</div></div>')
+    f'<div class="diag"><div class="ttl">{IC_CHART}<span>導入適合性レポート</span><span class="note">イメージ（架空の例）</span></div>'
+    f'<div class="ban">{IC_OK}<span>条件付きで導入可能</span></div><ul>'
+    f'<li><span class="k">適合項目</span>{IC_OK}<span class="v">28件 <small>（全32件中）</small></span>{IC_CHEV}</li>'
+    f'<li><span class="k">要確認事項</span>{IC_WARN}<span class="v">4件</span>{IC_CHEV}</li>'
+    f'<li><span class="k">受入テスト</span>{IC_DONE}<span class="v">準備完了 <small>（テストケース 12件）</small></span>{IC_CHEV}</li>'
+    '</ul></div></div>')
 
 FLOW = [("入力1", "製品の資料", "提案書・機能一覧・マニュアル・営業説明など"),
         ("入力2", "自社のルール", "質問に答え、ルール・例外・条件をまとめる"),
@@ -71,11 +83,11 @@ def _hero() -> None:
     st.markdown(
         '<div class="rp-herowrap"><div class="rp-hero"><div class="copy">'
         '<div class="eyebrow">AI受入テスト・導入確認支援</div>'
-        '<div class="name">ReadyProof AI</div>'
+        f'<div class="name">{IC_MARK}<span>ReadyProof AI</span></div>'
         '<div class="tag" role="heading" aria-level="1"><span>その製品、</span><span><em>自社</em>で使える？</span></div>'
         '<p class="desc"><span>製品資料と社内ルールを照合し、</span><span>導入判断と受入テストの準備を支援。</span></p>'
         '<p class="sub"><span>AIが確認事項を整理し、</span><span>最終的な導入判断は人が行います。</span></p>'
-        f'<div class="cta"><a class="btn primary" href="#{ANCHOR_DEMO}">3分デモを体験する</a>'
+        f'<div class="cta"><a class="btn primary" href="#{ANCHOR_DEMO}">3分デモを体験する{IC_ARROW}</a>'
         f'<a class="btn ghost" href="#{ANCHOR_OWN}">自社の案件で試す</a></div>'
         f'</div>{HERO_VISUAL}</div></div>', unsafe_allow_html=True)
 

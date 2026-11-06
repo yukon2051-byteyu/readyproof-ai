@@ -39,10 +39,9 @@ def test_home_shows_tagline_and_demos():
     t = texts(at)
     assert "その製品、" in t and "で使える？" in t and TAGLINE == "その製品、自社で使える？"
     assert "ReadyProof" in t and "AI受入テスト・導入確認支援" in t
-    assert "診断結果のイメージ" in t  # 説明図を本物の診断結果に見せない
+    assert "イメージ（架空の例）" in t  # 説明図を本物の診断結果に見せない
     assert 'href="#rp-demo"' in t and 'href="#rp-own"' in t and 'id="rp-demo"' in t and 'id="rp-own"' in t
     assert t.index("まずは3分デモで体験") < t.index("AIと人の役割分担") < t.index("使い方の流れ") < t.index("自社の案件で試す</div>")
-    assert not [x for x in ("件（全", "条件付きで導入可能", "準備完了") if x in t]  # 架空の件数や判定を載せない
     assert "3分デモを始める" in [b.label for b in at.button]
     assert len(at.selectbox(key="demo_pick").options) == 3
 

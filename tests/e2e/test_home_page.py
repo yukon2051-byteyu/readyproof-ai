@@ -25,11 +25,11 @@ def test_hero_layout_and_links(browser, app_url, width, height):
     tag, viz = pg.locator(".rp-hero .tag").bounding_box(), pg.locator(".rp-hero .viz").bounding_box()
     assert tag["x"] + tag["width"] <= hero["x"] + hero["width"] and viz["x"] + viz["width"] <= hero["x"] + hero["width"]
     if width == 1440:
-        assert hero["height"] < 400 and viz["x"] > tag["x"] + tag["width"] - 1  # 2カラム
+        assert hero["height"] < 470 and viz["x"] > tag["x"] + tag["width"] - 1  # 2カラム
         assert abs((viz["y"] + viz["height"] / 2) - (hero["y"] + hero["height"] / 2)) < 12  # 上下中央
     else:
         assert viz["y"] > tag["y"] + tag["height"]  # 縦並びで文章が先
-    assert pg.get_by_text("診断結果のイメージ").is_visible()
+    assert pg.get_by_text("イメージ（架空の例）").is_visible()
     for name, sel in (("3分デモを体験する", "#rp-demo"), ("自社の案件で試す", "#rp-own")):
         pg.get_by_role("link", name=name).click()
         pg.wait_for_timeout(800)

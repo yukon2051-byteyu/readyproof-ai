@@ -87,9 +87,8 @@ div[class*="st-key-rpbox_"] {{ padding: 14px 18px; }}
   background: {NAVY}; color: {ACCENT}; font-size: .85rem; font-weight: 800; flex: none; }}
 .rp-card .b {{ font-size: .9rem; color: #1F2937; }}
 .rp-card .m {{ font-size: .8rem; color: {MUTED}; margin-top: auto; padding-top: 6px; }}
-.rp-card.role {{ background: #fff; border-top: 1px solid {BORDER}; padding: 12px 16px; }}
+.rp-card.role {{ background: #FBF3DC; border-color: #EBD9A6; border-top-color: #E0B84A; padding: 12px 16px; }}
 .rp-card.role .t {{ font-size: 1rem; }}
-.rp-card.role .rp-num {{ background: #E3F2FB; color: #1D5FA8; }}
 .rp-card.role .b {{ font-size: .95rem; line-height: 1.6; }}
 .rp-card ul {{ margin: 0 0 0 1.1rem; padding: 0; font-size: .86rem; color: #1F2937; }}
 
@@ -97,50 +96,70 @@ div[class*="st-key-rpbox_"] {{ padding: 14px 18px; }}
 /* トップの見出し帯：左に文章、右に説明図。メイン領域の幅で切り替える（サイドバーの開閉に対応するためコンテナクエリ） */
 .rp-herowrap {{ container-type: inline-size; margin: 0 0 8px; }}
 .rp-hero {{ display: grid; grid-template-columns: minmax(0, 55fr) minmax(0, 45fr); gap: 28px; align-items: center;
-  min-height: 330px; box-sizing: border-box; padding: 28px 32px; border-radius: 18px; color: #fff; overflow: hidden;
-  background: linear-gradient(120deg, #0F2340 0%, #14315A 55%, #1D4E89 100%); }}
-.rp-hero .copy {{ min-width: 0; }}
-.rp-hero .eyebrow {{ display: inline-block; font-size: .85rem; font-weight: 700; color: #BEEBFF; border: 1px solid #5CC8F5;
+  min-height: 380px; box-sizing: border-box; padding: 30px 32px; border-radius: 20px; color: #fff; overflow: hidden; position: relative;
+  background: radial-gradient(90% 120% at 78% 30%, #17589F 0%, rgba(23, 88, 159, 0) 60%), linear-gradient(120deg, #06193A 0%, #0A2A57 55%, #0D3B78 100%); }}
+.rp-hero::before {{ content: ""; position: absolute; left: 30%; top: -60%; width: 62%; height: 220%; border-radius: 50%;
+  background: rgba(255, 255, 255, .035); pointer-events: none; }}
+.rp-hero .copy {{ position: relative; min-width: 0; }}
+.rp-hero .eyebrow {{ display: inline-block; font-size: .9rem; font-weight: 700; color: #4FEAF3; border: 1.5px solid #2BE6F2;
   padding: 3px 12px; border-radius: 999px; line-height: 1.5; }}
-.rp-hero .name {{ font-size: 1.1rem; font-weight: 700; color: #E6EDF6; margin: 12px 0 2px; line-height: 1.4; }}
-.rp-hero .tag {{ font-size: clamp(30px, 4.6cqw, 44px); font-weight: 800; color: #fff; line-height: 1.3; margin: 0 0 12px; }}
-.rp-hero .tag span {{ display: inline-block; }}
-.rp-hero .tag em {{ font-style: normal; color: {ACCENT}; }}
+.rp-hero .name {{ display: flex; align-items: center; gap: 8px; font-size: 1.25rem; font-weight: 700; color: #fff; margin: 12px 0 4px; line-height: 1.4; }}
+.rp-hero .name .mark {{ width: 28px; height: 17px; flex: none; }}
+.rp-hero .tag {{ font-size: clamp(32px, 5.6cqw, 54px); font-weight: 800; color: #fff; line-height: 1.28; margin: 0 0 12px; }}
+.rp-hero .tag span {{ display: block; }}
+.rp-hero .tag em {{ font-style: normal; color: #2BE6F2; }}
 .rp-hero .desc {{ font-size: 1rem; line-height: 1.6; color: #F2F6FB; margin: 0 0 6px; }}
 .rp-hero .sub {{ font-size: .94rem; line-height: 1.6; color: #D5E0EE; margin: 0; }}
 .rp-hero .desc span, .rp-hero .sub span {{ display: inline-block; }}
 .rp-hero .cta {{ display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }}
 .rp-hero a.btn {{ display: inline-flex; align-items: center; justify-content: center; min-height: 44px; box-sizing: border-box;
-  padding: 8px 18px; border-radius: 10px; font-size: 1rem; font-weight: 700; text-decoration: none; line-height: 1.4; }}
-.rp-hero a.btn.primary {{ background: {ACCENT}; color: #0F2340 !important; border: 1px solid {ACCENT}; }}
-.rp-hero a.btn.primary:hover {{ background: #7DD3FC; border-color: #7DD3FC; }}
+  gap: 8px; padding: 8px 20px; border-radius: 10px; font-size: 1rem; font-weight: 700; text-decoration: none; line-height: 1.4; }}
+.rp-hero a.btn .arw {{ width: 18px; height: 13px; }}
+.rp-hero a.btn.primary {{ background: #2BE6F2; color: #06193A !important; border: 1px solid #2BE6F2; }}
+.rp-hero a.btn.primary:hover {{ background: #7BF0F6; border-color: #7BF0F6; }}
 .rp-hero a.btn.ghost {{ background: transparent; color: #fff !important; border: 1px solid #C7D5E6; }}
 .rp-hero a.btn.ghost:hover {{ background: rgba(255, 255, 255, .1); }}
 .rp-hero a.btn:focus-visible {{ outline: 3px solid #fff; outline-offset: 2px; }}
-.rp-hero .viz {{ min-width: 0; color: {NAVY}; }}
+.rp-hero .viz {{ position: relative; min-width: 0; color: {NAVY}; }}
 .rp-hero .viz .ic {{ flex: none; width: 22px; height: 22px; }}
-.rp-hero .viz .docs {{ display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }}
-.rp-hero .viz .doc {{ display: flex; align-items: center; gap: 8px; background: #F4F8FD; border: 1px solid #D6E2F0; border-radius: 10px;
-  padding: 10px 12px; font-size: .95rem; font-weight: 700; box-shadow: 0 2px 6px rgba(8, 20, 40, .25); }}
-.rp-hero .viz .link {{ display: block; width: 100%; height: 26px; color: #8FD4F5; }}
-.rp-hero .viz .diag {{ background: #fff; border: 1px solid #D6E2F0; border-radius: 12px; padding: 14px 16px;
-  box-shadow: 0 4px 12px rgba(8, 20, 40, .28); }}
-.rp-hero .viz .ttl {{ display: flex; align-items: center; gap: 8px; font-size: 1.1rem; font-weight: 800; line-height: 1.4; }}
-.rp-hero .viz .note {{ font-size: .8rem; font-weight: 700; color: #1F5E8C; margin-top: 2px; }}
-.rp-hero .viz .lead {{ font-size: .95rem; font-weight: 700; background: #EAF5FC; border-radius: 8px; padding: 6px 10px; margin: 8px 0; }}
+.rp-hero .viz .docs {{ display: grid; grid-template-columns: 1fr 1fr; gap: 26px; margin-right: 10px; }}
+.rp-hero .viz .doc {{ background: #F7FAFE; border-radius: 8px; padding: 10px 12px 12px;
+  box-shadow: 5px 5px 0 #DCE7F4, 10px 10px 0 #B9CDE6; }}
+.rp-hero .viz .dt {{ display: flex; align-items: center; gap: 8px; font-size: .98rem; font-weight: 800; line-height: 1.4; margin-bottom: 8px; }}
+.rp-hero .viz .thumb {{ display: grid; gap: 8px; height: 72px; }}
+.rp-hero .viz .thumb.a {{ grid-template-columns: 1.1fr 1fr; }}
+.rp-hero .viz .scr {{ border-radius: 5px; background: #D5E9FA; padding: 8px; display: grid; }}
+.rp-hero .viz .scr i {{ display: block; border-radius: 3px; background: linear-gradient(90deg, #2A5C9E 0 22%, #fff 22% 100%); box-shadow: 0 1px 3px rgba(8, 20, 40, .2); }}
+.rp-hero .viz .lines {{ display: flex; flex-direction: column; justify-content: space-between; }}
+.rp-hero .viz .lines b {{ display: block; height: 6px; border-radius: 3px; background: #CBD6E4; }}
+.rp-hero .viz .panel {{ background: #EDF2F8; border-radius: 5px; padding: 9px 10px; }}
+.rp-hero .viz .panel b:not(:first-child) {{ margin-left: 12px; }}
+.rp-hero .viz .link {{ display: block; width: 100%; height: 38px; margin-top: 8px; color: #D6F4FF; }}
+.rp-hero .viz .diag {{ background: #F7FAFE; border-radius: 14px; padding: 14px 16px 10px; box-shadow: 0 8px 22px rgba(4, 14, 32, .4); }}
+.rp-hero .viz .ttl {{ display: flex; align-items: center; gap: 8px; font-size: 1.15rem; font-weight: 800; line-height: 1.4; }}
+.rp-hero .viz .ttl .note {{ margin-left: auto; font-size: .76rem; font-weight: 700; color: #4A6078; white-space: nowrap; }}
+.rp-hero .viz .ban {{ display: flex; align-items: center; justify-content: center; gap: 10px; background: #D3F4EA; color: #0B5C4B; border-radius: 8px;
+  padding: 9px 12px; margin: 10px 0 8px; font-size: 1.2rem; font-weight: 800; line-height: 1.4; }}
+.rp-hero .viz .ban .ic {{ width: 28px; height: 28px; }}
 .rp-hero .viz ul {{ list-style: none; margin: 0; padding: 0; }}
-.rp-hero .viz li {{ display: flex; align-items: center; gap: 8px; margin: 0; padding: 5px 0; font-size: .95rem; font-weight: 600;
-  border-top: 1px solid #E8EEF5; }}
+.rp-hero .viz li {{ display: grid; grid-template-columns: 6.6em 22px minmax(0, 1fr) 10px; gap: 8px; align-items: center; margin: 0; padding: 7px 2px;
+  font-size: .92rem; line-height: 1.4; border-top: 1px solid #E4EBF3; }}
 .rp-hero .viz li:first-child {{ border-top: none; }}
-.rp-hero .viz .ok {{ color: #1E7B45; }} .rp-hero .viz .warn {{ color: #B45309; }} .rp-hero .viz .list {{ color: #1D5FA8; }}
+.rp-hero .viz li .k {{ font-weight: 700; }}
+.rp-hero .viz li .v {{ font-weight: 700; }}
+.rp-hero .viz li .v small {{ display: inline-block; font-size: .82rem; font-weight: 500; }}
+.rp-hero .viz li .chev {{ width: 10px; height: 14px; color: #6B7C90; }}
+.rp-hero .viz .ok {{ color: #1E8A5C; }} .rp-hero .viz .warn {{ color: #F2A531; }} .rp-hero .viz .list {{ color: #2B7BE4; }}
 @container (max-width: 720px) {{
   .rp-hero {{ grid-template-columns: minmax(0, 1fr); gap: 20px; padding: 24px 20px; min-height: 0; }}
-  .rp-hero .viz .link {{ display: none; }}
-  .rp-hero .viz .docs {{ margin-bottom: 10px; }}
-  .rp-hero .viz .diag {{ padding: 10px 14px; }}
-  .rp-hero .viz .lead {{ display: none; }}
-  .rp-hero .viz ul {{ display: flex; flex-wrap: wrap; gap: 2px 14px; margin-top: 6px; }}
-  .rp-hero .viz li {{ border-top: none; padding: 2px 0; }}
+  .rp-hero .tag span {{ display: inline-block; }}
+  .rp-hero .viz .thumb, .rp-hero .viz .link {{ display: none; }}
+  .rp-hero .viz .docs {{ gap: 18px; margin-bottom: 18px; }}
+  .rp-hero .viz .dt {{ margin-bottom: 0; }}
+  .rp-hero .viz .diag {{ padding: 12px 14px 6px; }}
+  .rp-hero .viz .ban {{ font-size: 1.05rem; }}
+  .rp-hero .viz .ttl {{ flex-wrap: wrap; }}
+  .rp-hero .viz .ttl .note {{ margin-left: 0; flex: 1 1 100%; }}
   .rp-hero .cta a.btn {{ flex: 1 1 100%; }} }}
 /* トップの各セクション */
 [id="rp-demo"], [id="rp-own"] {{ scroll-margin-top: 3.2rem; }}
