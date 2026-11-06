@@ -75,7 +75,7 @@ def _hero() -> None:
     st.markdown(
         '<div class="rp-herowrap"><div class="rp-hero"><div class="copy">'
         f'<div class="top"><div class="eyebrow">AI受入テスト・導入確認支援</div><div class="name">{IC_MARK}<span>ReadyProof AI</span></div></div>'
-        '<div class="tag" role="heading" aria-level="1"><span>その製品、</span><span><em>自社</em>で使える？</span></div>'
+        '<div class="tag" role="heading" aria-level="1"><span>その製品、</span><span><em>ウチ</em>で使える？</span></div>'
         '<p class="desc"><span>製品資料と社内ルールを照合し、</span><span>導入判断と受入テストの準備を支援。</span></p>'
         '<p class="sub"><span>AIが確認事項を整理し、</span><span>最終的な導入判断は人が行います。</span></p>'
         f'<div class="cta"><a class="btn primary" href="#{ANCHOR_DEMO}">3分デモを体験する{IC_ARROW}</a>'
