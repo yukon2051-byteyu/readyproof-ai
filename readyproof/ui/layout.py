@@ -99,18 +99,38 @@ def next_button(label: str, page_key: str, left=None) -> None:
 
 
 _SCROLL_JS = """<script>
-const d = window.parent.document;
-const m = d.querySelector('[data-testid="stMain"]') || d.querySelector('section.main');
-if (m) { m.scrollTo(0, 0); }
-window.parent.scrollTo(0, 0);
+(() => {  // 名前がブラウザの組み込みの名前（top など）とぶつからないよう、全体を囲む
+const w = window.parent;
+const toTop = () => {
+  const m = w.document.querySelector('[data-testid="stMain"]') || w.document.querySelector('section.main');
+  if (m) { m.scrollTo(0, 0); }
+  w.scrollTo(0, 0);
+};
+// 画面（URLのページ部分）が変わったら最上部へ戻す。サイドバー・ロゴ・ボタンのどれで移っても働くよう、
+// 最初の表示で一度だけ組み込む。ページ内リンク（#）や、URLの付加情報（?以降）だけの変更では動かさない。
+if (!w.__rpScrollHooked) {
+  w.__rpScrollHooked = true;
+  const push = w.history.pushState;
+  w.history.pushState = function () {
+    const before = w.location.pathname;
+    const result = push.apply(this, arguments);
+    if (w.location.pathname !== before) { [0, 150, 400, 800].forEach(t => setTimeout(toTop, t)); }
+    return result;
+  };
+}
+})();
 </script>"""
 
 
 def scroll_top_on_page_change(key: str) -> None:
-    """別の画面に移ったときは、ページの最上部から表示する（Streamlit は前の画面のスクロール位置を引き継ぐため）。"""
-    if st.session_state.get("_last_page") == key:
-        return
-    st.session_state["_last_page"] = key
+    """別の画面に移ったときは、ページの最上部から表示する（Streamlit は前の画面のスクロール位置を引き継ぐため）。
+
+    見えない部品を毎回同じ中身で置き、その中のスクリプトがブラウザに一度だけ「ページが変わったら最上部へ戻す」
+    仕組みを組み込む。部品を1回だけ置く作りだと、直後の描き直しで読み込み前に消え、動かないことがあった。
+    中身が毎回同じなので部品は作り直されず、同じ画面での操作のたびに最上部へ戻ることはない。
+    key は呼び出し元の画面名（記録用）。
+    """
     import streamlit.components.v1 as components
 
+    st.session_state["_last_page"] = key
     components.html(_SCROLL_JS, height=0)

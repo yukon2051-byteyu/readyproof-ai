@@ -18,6 +18,7 @@ from ...core import new_project
 from ...demos.builder import DEMOS, build
 from .. import state
 from ..components import start_tour
+from ..layout import scroll_top_on_page_change
 from ..theme import esc, section
 
 ANCHOR_DEMO = "rp-demo"
@@ -131,6 +132,7 @@ def _own() -> None:
 
 
 def render():
+    scroll_top_on_page_change("home")  # ロゴ・サイドバー・「ホームへ」のどれで戻っても、最上部から表示する
     _hero()
     _demo()
     _roles()

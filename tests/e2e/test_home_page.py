@@ -1,5 +1,6 @@
 """トップページの E2E テスト。実行方法は test_result_page.py と同じ（RP_E2E=1）。"""
 import os
+import re
 
 import pytest
 
@@ -98,4 +99,34 @@ def test_create_own_project_needs_password_and_sidebar_works(browser, app_url, a
     assert "/rules" in pg.url
     pg.locator('[data-testid="stSidebarNav"]').get_by_text("ホーム").first.click()
     pg.wait_for_selector(".rp-hero", timeout=30000)
+    pg.close()
+
+
+SCROLL = "() => document.querySelector('[data-testid=\"stMain\"]').scrollTop"
+
+
+def _go_to_decision_bottom(pg, url):
+    """デモを開いて ⑤ 導入判断へ移り、ページの一番下までスクロールする。"""
+    pg.goto(url + "/decision?demo=demo1", wait_until="domcontentloaded")
+    pg.get_by_role("button", name=re.compile("ホームへ")).wait_for(timeout=90000)
+    pg.wait_for_timeout(2000)
+    pg.evaluate("() => { const m = document.querySelector('[data-testid=\"stMain\"]'); m.scrollTo(0, m.scrollHeight) }")
+    pg.wait_for_timeout(500)
+    assert pg.evaluate(SCROLL) > 300
+
+
+@pytest.mark.parametrize("how", ["logo", "sidebar", "button"])
+def test_returning_home_starts_at_top(browser, app_url, how):
+    pg = browser.new_page(viewport={"width": 1280, "height": 853})
+    _go_to_decision_bottom(pg, app_url)
+    if how == "logo":
+        pg.locator('[data-testid="stSidebarHeader"] a, [data-testid="stLogoLink"]').first.click()
+    elif how == "sidebar":
+        pg.locator('[data-testid="stSidebarNav"]').get_by_text("ホーム").first.click()
+    else:
+        pg.get_by_role("button", name=re.compile("ホームへ")).click()
+    pg.wait_for_selector(".rp-hero", timeout=30000)
+    pg.wait_for_timeout(2500)
+    assert pg.evaluate(SCROLL) == 0
+    assert pg.locator(".rp-hero").bounding_box()["y"] < 60
     pg.close()

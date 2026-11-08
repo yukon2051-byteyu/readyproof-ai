@@ -108,7 +108,7 @@ RP_USAGE_LEDGER_PATH = "data/usage_ledger.jsonl"
 $env:RP_RUN_SLOW="1"; .venv\Scripts\python -m pytest -q   # 実音声のローカル文字起こしを含める
 ```
 
-結果と未検証範囲は [docs/test_results.md](docs/test_results.md) を参照してください（2026-11-06 時点：139件合格・1件スキップ、ブラウザの E2E テスト18件合格）。
+結果と未検証範囲は [docs/test_results.md](docs/test_results.md) を参照してください（2026-11-06 時点：139件合格・1件スキップ、ブラウザの E2E テスト21件合格）。
 
 ## 使用技術
 

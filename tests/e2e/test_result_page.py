@@ -53,6 +53,9 @@ def test_filter_and_sort(browser, app_url):
     assert "代理承認" in pg.locator(".rp-rq").first.inner_text()
     pick(pg, "対応可能な見込み（2）")
     pg.wait_for_function(cards, arg=2, timeout=20000)
+    pg.wait_for_timeout(1000)
+    # 同じ画面での操作では、最上部へ戻らない（画面を移ったときだけ戻す）
+    assert pg.evaluate("() => document.querySelector('[data-testid=\"stMain\"]').scrollTop") > 0
     pick(pg, "対応困難（0）")
     pg.get_by_text("条件に合う要件はありません").wait_for(timeout=20000)
     pg.close()
